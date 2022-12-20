@@ -1,0 +1,13 @@
+current directory: /Users/risto-matti/omat/tekstitv/TekstiTVReactNativeApp/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+/Users/risto-matti/.rvm/rubies/ruby-2.7.5/bin/ruby -I /Users/risto-matti/.rvm/rubies/ruby-2.7.5/lib/ruby/2.7.0 -r ./siteconf20221218-96254-1foe5si.rb extconf.rb
+creating Makefile
+
+current directory: /Users/risto-matti/omat/tekstitv/TekstiTVReactNativeApp/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make "DESTDIR=" clean
+
+current directory: /Users/risto-matti/omat/tekstitv/TekstiTVReactNativeApp/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make "DESTDIR="
+make: Nothing to be done for `all'.
+
+current directory: /Users/risto-matti/omat/tekstitv/TekstiTVReactNativeApp/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make "DESTDIR=" install
