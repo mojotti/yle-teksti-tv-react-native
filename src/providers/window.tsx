@@ -44,7 +44,7 @@ export const WindowProvider: FunctionComponent<PropsWithChildren> = (props) => {
   });
 
   const onChange = ({ window: w, screen: s }: DimensionsType) => {
-    const newOrientation = getOrientation(screen);
+    const newOrientation = getOrientation(s);
 
     setOrientation(newOrientation);
     setDimensions({ window: w, screen: s });
@@ -54,7 +54,8 @@ export const WindowProvider: FunctionComponent<PropsWithChildren> = (props) => {
 
   useEffect(() => {
     Dimensions.addEventListener("change", onChange);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <WindowContext.Provider

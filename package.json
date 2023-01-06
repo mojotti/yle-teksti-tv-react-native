@@ -1,6 +1,6 @@
 {
   "name": "TekstiTVReactNativeApp",
-  "version": "2.0.4",
+  "version": "2.0.7",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
