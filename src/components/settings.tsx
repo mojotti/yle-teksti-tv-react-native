@@ -15,11 +15,13 @@ import { Divider } from "./divider";
 import { SettingKey, SettingsContext } from "../providers/settings";
 import { CheckBoxCmp } from "./checkbox";
 import { BackNavigationHOC } from "./back-navigation-hoc";
-import Icon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "react-native-vector-icons/Ionicons";
+
 import { isValidPage } from "../utils";
 import { Button } from "./button";
 import packageJson from "../../package.json";
 
+const Icon = _IonIcon as React.ElementType;
 const screenRatioHelp = `Kuvasuhteella on merkitystä ainoastaan, kun sovellusta käytetään pystyasennossa.
             
 Laitteesi näytön koko saattaa vaikuttaa kuvasuhteen toteutumiseen.`;

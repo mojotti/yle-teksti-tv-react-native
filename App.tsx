@@ -15,7 +15,9 @@ import {
   StackNavigationProp,
 } from "@react-navigation/stack";
 import { iconSizeLarge, pageInfoHeight } from "./src/utils/constants";
-import Icon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "react-native-vector-icons/Ionicons";
+
+const Icon = _IonIcon as React.ElementType;
 
 const App: FC = () => (
   <AppStateProvider>

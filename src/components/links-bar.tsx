@@ -25,7 +25,8 @@ import { getLinkPages } from "../utils";
 import { NavigationStatusContext } from "../providers/navigation-status";
 import { PageContext } from "../providers/page";
 import { SettingsContext } from "../providers/settings";
-import Icon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "react-native-vector-icons/Ionicons";
+
 import { OrientationTypes, WindowContext } from "../providers/window";
 import {
   fontSizeLarge,
@@ -36,6 +37,7 @@ import {
 } from "../utils/constants";
 import { useNavigation } from "@react-navigation/native";
 import { HomeScreenNavigationProp } from "../../App";
+const Icon = _IonIcon as React.ElementType;
 
 const validPositiveNumber = (number: any): number => {
   const n = Number(number);

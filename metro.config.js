@@ -27,6 +27,7 @@ const config = {
     assetExts: assetExts.filter((ext) => ext !== "svg"),
     sourceExts: [...sourceExts, "svg"],
   },
+  resetCache: true,
 };
 
 module.exports = mergeConfig(defaultConfig, config);

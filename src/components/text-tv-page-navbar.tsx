@@ -15,13 +15,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "react-native-vector-icons/Ionicons";
+
 import React, { FC, PropsWithChildren, useContext } from "react";
 import { infoAreaColor } from "../utils/colors";
 import { SettingsContext } from "../providers/settings";
 import { NavigationStatusContext } from "../providers/navigation-status";
 import { PageContext } from "../providers/page";
 import { OrientationTypes, WindowContext } from "../providers/window";
+const Icon = _IonIcon as React.ElementType;
 
 export const TextTvPageNavBar: React.FC<{
   isKeyboardVisible: boolean;
