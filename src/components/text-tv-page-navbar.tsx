@@ -8,14 +8,11 @@ import {
   pageInfoLandscapeWidth,
 } from "../utils/constants";
 import {
-  ActivityIndicator,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Animated,
-  Easing,
 } from "react-native";
 import _IonIcon from "@react-native-vector-icons/ionicons";
 
@@ -52,7 +49,6 @@ export const TextTvPageNavBar: React.FC<{
   const { width } = applicationWindow;
 
   const isLoading = isLoadingImg || isLoadingPageData;
-  const hasUnknownError = error && error.code !== 404;
   const isLandscape = orientation === OrientationTypes.Landscape;
   const isPageInFavorites = settings.favorites.includes(page);
 

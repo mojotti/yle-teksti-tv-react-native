@@ -58,6 +58,14 @@ export const TextTVPage: React.FunctionComponent<TextTvPageProps> = (props) => {
     [settings.screenRatio, viewHeight, pageWidth, isLandscape],
   );
 
+  console.log({
+    isLoading,
+    hasUnknownError,
+    isLoadingImg,
+    isLoadingPageData,
+    viewHeight,
+  });
+
   return (
     <View
       style={styles.container}
@@ -66,17 +74,20 @@ export const TextTVPage: React.FunctionComponent<TextTvPageProps> = (props) => {
         setViewWidth(event.nativeEvent.layout.width);
       }}>
       <View
-        style={{
-          ...styles.container,
-          ...styles.loadingContainer,
-          height: "100%",
-          width: "100%",
-          position: "absolute",
-          ...(isLoading && !hasUnknownError
+        style={[
+          styles.container,
+          styles.loadingContainer,
+          isLoading && !hasUnknownError
             ? styles.displayFlex
-            : styles.displayNone),
-        }}>
-        {isLoading && !hasUnknownError && <Loader />}
+            : styles.displayNone,
+          {
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0,0,0,0.7)",
+          },
+        ]}>
+        <Loader />
       </View>
 
       <View
