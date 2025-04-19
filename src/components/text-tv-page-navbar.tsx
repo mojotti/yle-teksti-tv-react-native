@@ -64,18 +64,6 @@ export const TextTvPageNavBar: React.FC<{
     );
   };
 
-  console.log("-----------------------------------------");
-  console.log({
-    isLoading,
-    isLoadingImg,
-    isLoadingPageData,
-    hasUnknownError,
-    page,
-    subPage,
-    isPageInFavorites,
-  });
-  console.log("-----------------------------------------");
-
   return (
     <View
       style={{

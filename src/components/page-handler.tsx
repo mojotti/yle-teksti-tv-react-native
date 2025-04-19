@@ -117,9 +117,7 @@ export const PageHandler: React.FunctionComponent = () => {
 
   const refreshPage = async () => {
     if (currentPage && currentSubPage) {
-      console.log("refreshing page", currentPage, currentSubPage);
       await fetchPage(currentPage, currentSubPage, true);
-      console.log("refreshed page", currentPage, currentSubPage);
     }
   };
 
