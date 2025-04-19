@@ -9,7 +9,7 @@ export default class Loader extends React.PureComponent {
         source={require("../static/animations/loader.json")}
         autoPlay
         loop
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "80%", height: "80%" }}
       />
     );
   }

@@ -8,6 +8,7 @@ import {
   pageInfoLandscapeWidth,
 } from "../utils/constants";
 import {
+  ActivityIndicator,
   Platform,
   StyleSheet,
   Text,
@@ -52,10 +53,11 @@ export const TextTvPageNavBar: React.FC<{
   const isLandscape = orientation === OrientationTypes.Landscape;
   const isPageInFavorites = settings.favorites.includes(page);
 
-  // Animation state and refs
   const [displayNumber, setDisplayNumber] = useState(parseInt(page || "100"));
   const targetNumber = useRef(parseInt(page || "100"));
   const animationRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const hasUnknownError = error && error.code !== 404;
+
   const intervalMs = 30; // Speed while loading
 
   // Start or update counting animation when page changes
@@ -89,7 +91,6 @@ export const TextTvPageNavBar: React.FC<{
       }, intervalMs);
     }
 
-    // Cleanup
     return () => {
       if (animationRef.current) {
         clearInterval(animationRef.current);
@@ -153,9 +154,6 @@ export const TextTvPageNavBar: React.FC<{
               />
             </TouchableOpacity>
           )}
-          {/* {isLoading && !hasUnknownError && (
-            <ActivityIndicator size={fontSizeMedium + 8} color="#FFFFFF" />
-          )} */}
           <Text
             style={{
               ...styles.pageInfoText,
@@ -170,7 +168,14 @@ export const TextTvPageNavBar: React.FC<{
             </Text>
           )}
 
-          {(isLandscape || (page && !isLoading)) && (
+          {!(page && !isLoading) && !hasUnknownError && (
+            <ActivityIndicator
+              size={fontSizeMedium + 2}
+              color="#FFFFFF"
+              style={{ paddingLeft: isLandscape ? 0 : 8 }}
+            />
+          )}
+          {page && !isLoading && (
             <TouchableOpacity
               onPress={() => {
                 if (page && !isLoading) {
