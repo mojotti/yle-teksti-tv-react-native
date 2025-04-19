@@ -16,7 +16,6 @@ import {
   TouchableHighlight,
   View,
 } from "react-native";
-import ExtraDimensions from "react-native-extra-dimensions-android";
 
 import { TextTVPage } from "./text-tv-page";
 import { getNewSubPage, isValidPage } from "../utils";
@@ -33,11 +32,7 @@ import { HomeScreenNavigationProp } from "../../App";
 import { AppStateContext } from "../providers/app-state";
 import { NavigationStatusContext } from "../providers/navigation-status";
 import { OrientationTypes, WindowContext } from "../providers/window";
-import {
-  linkAreaHeight,
-  linkAreaLandscapeWidth,
-  portraitNoTouchBarArea,
-} from "../utils/constants";
+import { linkAreaHeight, linkAreaLandscapeWidth } from "../utils/constants";
 import { TextTvPageNavBar } from "./text-tv-page-navbar";
 
 export const PageHandler: React.FunctionComponent = () => {
@@ -122,9 +117,9 @@ export const PageHandler: React.FunctionComponent = () => {
 
   const refreshPage = async () => {
     if (currentPage && currentSubPage) {
+      console.log("refreshing page", currentPage, currentSubPage);
       await fetchPage(currentPage, currentSubPage, true);
-
-      changeSubPage("next", currentSubPage);
+      console.log("refreshed page", currentPage, currentSubPage);
     }
   };
 
@@ -198,9 +193,6 @@ export const PageHandler: React.FunctionComponent = () => {
 
   const isLandscape = orientation === OrientationTypes.Landscape;
 
-  const softMenuHeight =
-    Platform.OS === "ios" ? 0 : ExtraDimensions.getSoftMenuBarHeight();
-
   return (
     <Container isLandscape={isLandscape}>
       <TextTvPageNavBar
@@ -244,17 +236,6 @@ export const PageHandler: React.FunctionComponent = () => {
               <View style={{ flex: 1, backgroundColor: "#000000" }} />
             )}
           </View>
-          {Platform.OS === "android" &&
-            softMenuHeight === 0 &&
-            !isLandscape && (
-              <View
-                style={{
-                  height: portraitNoTouchBarArea,
-                  width: "100%",
-                  backgroundColor: "#000000",
-                }}
-              />
-            )}
         </>
       )}
     </Container>

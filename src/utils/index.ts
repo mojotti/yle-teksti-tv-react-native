@@ -1,5 +1,6 @@
 import { TextTvResponse } from "../types/response";
 import { ScreenRatio } from "../providers/settings";
+import { APP_ID, APP_KEY } from "@env";
 
 export const isValidPage = (input: string) => {
   if (input.length !== 3) {
@@ -8,10 +9,14 @@ export const isValidPage = (input: string) => {
 
   const inputAsNumber = Number(input);
 
-  return inputAsNumber !== NaN && inputAsNumber >= 100 && inputAsNumber < 900;
+  return (
+    !Number.isNaN(inputAsNumber) && inputAsNumber >= 100 && inputAsNumber < 900
+  );
 };
 
-const { APP_ID, APP_KEY } = process.env;
+if (!APP_ID || !APP_KEY) {
+  throw new Error("Missing APP_ID or APP_KEY in environment variables");
+}
 
 export const getPageImgSrc = (page: string, subPage = "1") => {
   return `https://external.api.yle.fi/v1/teletext/images/${page}/${subPage}.png?app_id=${APP_ID}&app_key=${APP_KEY}`;
@@ -128,63 +133,24 @@ export const getScreenHeight = (
   width: number,
   isLandscape: boolean,
 ): number => {
-  if (isLandscape) {
+  if (isLandscape || ratio === "full") {
     return viewHeight;
   }
 
-  if (ratio === "full") {
+  const ratioMultipliers: Record<string, number> = {
+    goldenRatio: 1.618033,
+    "16:9": 16 / 9,
+    "4:3": 4 / 3,
+    "3:2": 3 / 2,
+    "1:1": 1,
+  };
+
+  const multiplier = ratioMultipliers[ratio];
+
+  if (!multiplier) {
     return viewHeight;
   }
 
-  if (ratio === "goldenRatio") {
-    const newHeight = width * 1.618033;
-
-    if (newHeight < viewHeight) {
-      return newHeight;
-    }
-
-    return viewHeight;
-  }
-
-  if (ratio === "16:9") {
-    const newHeight = width * (16 / 9);
-
-    if (newHeight < viewHeight) {
-      return newHeight;
-    }
-
-    return viewHeight;
-  }
-
-  if (ratio === "4:3") {
-    const newHeight = width * (4 / 3);
-
-    if (newHeight < viewHeight) {
-      return newHeight;
-    }
-
-    return viewHeight;
-  }
-
-  if (ratio === "3:2") {
-    const newHeight = width * (3 / 2);
-
-    if (newHeight < viewHeight) {
-      return newHeight;
-    }
-
-    return viewHeight;
-  }
-
-  if (ratio === "1:1") {
-    const newHeight = width;
-
-    if (newHeight < viewHeight) {
-      return newHeight;
-    }
-
-    return viewHeight;
-  }
-
-  return viewHeight;
+  const newHeight = width * multiplier;
+  return Math.min(newHeight, viewHeight);
 };

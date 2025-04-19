@@ -16,10 +16,12 @@ export const BackNavigationHOC: React.FC<PropsWithChildren> = (props) => {
       return false;
     };
 
-    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress,
+    );
 
-    return () =>
-      BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+    return () => subscription.remove();
   }, []);
 
   return <>{props.children}</>;

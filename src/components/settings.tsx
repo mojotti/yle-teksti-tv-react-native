@@ -15,11 +15,11 @@ import { Divider } from "./divider";
 import { SettingKey, SettingsContext } from "../providers/settings";
 import { CheckBoxCmp } from "./checkbox";
 import { BackNavigationHOC } from "./back-navigation-hoc";
-import _IonIcon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "@react-native-vector-icons/ionicons";
 
 import { isValidPage } from "../utils";
 import { Button } from "./button";
-import packageJson from "../../package.json";
+import { version as appVersion } from "../../package.json";
 
 const Icon = _IonIcon as React.ElementType;
 const screenRatioHelp = `Kuvasuhteella on merkitystä ainoastaan, kun sovellusta käytetään pystyasennossa.
@@ -289,7 +289,7 @@ export const Settings = () => {
             styles={{ marginTop: 16, marginBottom: 10 }}
             onPress={() =>
               Linking.openURL(
-                `mailto:tekstitvmobile@gmail.com?subject=Palautetta Teksti-TV:stä&body=Sovelluksen versio: ${packageJson.version}`,
+                `mailto:tekstitvmobile@gmail.com?subject=Palautetta Teksti-TV:stä&body=Sovelluksen versio: ${appVersion}`,
               )
             }
           />
@@ -300,7 +300,7 @@ export const Settings = () => {
             style={{
               ...styles.body,
               marginBottom: 60,
-            }}>{`Sovelluksen versio: ${packageJson.version}`}</Text>
+            }}>{`Sovelluksen versio: ${appVersion}`}</Text>
         </ScrollView>
       </View>
     </BackNavigationHOC>

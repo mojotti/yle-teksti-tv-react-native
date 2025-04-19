@@ -2,6 +2,7 @@ import React, {
   FC,
   FunctionComponent,
   PropsWithChildren,
+  Ref,
   useContext,
   useEffect,
   useMemo,
@@ -25,7 +26,7 @@ import { getLinkPages } from "../utils";
 import { NavigationStatusContext } from "../providers/navigation-status";
 import { PageContext } from "../providers/page";
 import { SettingsContext } from "../providers/settings";
-import _IonIcon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "@react-native-vector-icons/ionicons";
 
 import { OrientationTypes, WindowContext } from "../providers/window";
 import {
@@ -233,7 +234,7 @@ const ScrollContainer: FC<
               flexDirection: "column",
             }}
             showsVerticalScrollIndicator
-            ref={(ref) => ref && setScrollView(ref)}>
+            ref={(ref) => setScrollView(ref || undefined)}>
             {children}
           </ScrollView>
         </View>
@@ -249,7 +250,7 @@ const ScrollContainer: FC<
           }}>
           <ScrollView
             horizontal
-            ref={(ref) => ref && setScrollView(ref)}
+            ref={(ref) => setScrollView(ref || undefined)}
             contentContainerStyle={{
               ...styles.container,
             }}

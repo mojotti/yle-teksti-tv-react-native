@@ -36,9 +36,19 @@ export const TextTVPage: React.FunctionComponent<TextTvPageProps> = (props) => {
     }
   };
 
-  const onLoad = () => setImgLoadingStatus(false);
+  const onLoad = () => {
+    console.log("on load!");
+    setImgLoadingStatus(false);
+  };
 
-  const onError = () => setImgLoadingStatus(false);
+  const onError = () => {
+    console.log("on error!");
+    setImgLoadingStatus(false);
+  };
+
+  console.log({
+    imgSrc,
+  })
 
   const isLoading = isLoadingImg || isLoadingPageData || viewHeight === 0;
 
@@ -86,7 +96,9 @@ export const TextTVPage: React.FunctionComponent<TextTvPageProps> = (props) => {
         {!hasUnknownError && imgSrc && (
           <Image
             onLoad={onLoad}
+            onLoadEnd={onLoad}
             onError={onError}
+            onProgress={(() => console.log("on progress!"))}
             source={{ uri: imgSrc }}
             resizeMode="stretch"
             style={

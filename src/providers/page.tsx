@@ -130,6 +130,8 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
 
       const srcWithCache = `${src}&cacheValid=${+new Date()}`;
 
+      console.log("srcWithCache", srcWithCache);
+
       setTextTvResponse(mappedPage);
       setImgSrc(srcWithCache);
 

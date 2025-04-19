@@ -15,24 +15,27 @@ import {
   StackNavigationProp,
 } from "@react-navigation/stack";
 import { iconSizeLarge, pageInfoHeight } from "./src/utils/constants";
-import _IonIcon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "@react-native-vector-icons/ionicons";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const Icon = _IonIcon as React.ElementType;
 
 const App: FC = () => (
-  <AppStateProvider>
-    <WindowProvider>
-      <SettingsProvider>
-        <NavigationStatusProvider>
-          <PageProvider>
-            <NavigationContainer theme={DarkTheme}>
-              <Navigator />
-            </NavigationContainer>
-          </PageProvider>
-        </NavigationStatusProvider>
-      </SettingsProvider>
-    </WindowProvider>
-  </AppStateProvider>
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <AppStateProvider>
+      <WindowProvider>
+        <SettingsProvider>
+          <NavigationStatusProvider>
+            <PageProvider>
+              <NavigationContainer theme={DarkTheme}>
+                <Navigator />
+              </NavigationContainer>
+            </PageProvider>
+          </NavigationStatusProvider>
+        </SettingsProvider>
+      </WindowProvider>
+    </AppStateProvider>
+  </GestureHandlerRootView>
 );
 
 export default App;
@@ -86,7 +89,6 @@ const Navigator: FC = () => {
               backgroundColor: "#1c1c1c",
               height: pageInfoHeight,
             },
-            headerBackTitleVisible: Platform.OS === "ios",
             headerTitleStyle: {
               color: "#eeeeee",
             },

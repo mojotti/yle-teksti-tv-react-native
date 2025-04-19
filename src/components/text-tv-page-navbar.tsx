@@ -15,7 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import _IonIcon from "react-native-vector-icons/Ionicons";
+import _IonIcon from "@react-native-vector-icons/ionicons";
 
 import React, { FC, PropsWithChildren, useContext } from "react";
 import { infoAreaColor } from "../utils/colors";
@@ -63,6 +63,18 @@ export const TextTvPageNavBar: React.FC<{
       ].sort(),
     );
   };
+
+  console.log("-----------------------------------------");
+  console.log({
+    isLoading,
+    isLoadingImg,
+    isLoadingPageData,
+    hasUnknownError,
+    page,
+    subPage,
+    isPageInFavorites,
+  });
+  console.log("-----------------------------------------");
 
   return (
     <View
@@ -132,8 +144,8 @@ export const TextTvPageNavBar: React.FC<{
                       ? "heart"
                       : "heart-outline"
                     : isPageInFavorites
-                    ? "star"
-                    : "star-outline"
+                      ? "star"
+                      : "star-outline"
                 }
                 size={iconSizeSmall}
                 color="#FFFFFF"
