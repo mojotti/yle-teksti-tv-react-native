@@ -244,7 +244,14 @@ const Container: FC<PropsWithChildren<{ isLandscape: boolean }>> = ({
   children,
   isLandscape,
 }) => (
-  <View style={{ display: "flex", flex: 1, backgroundColor: "black" }}>
+  <View style={{ 
+    display: "flex", 
+    flex: 1, 
+    backgroundColor: "black",
+    // These padding properties ensure the content doesn't flow over the screen edges
+    paddingHorizontal: Platform.OS === 'android' ? 2 : 0,
+    paddingBottom: Platform.OS === 'android' ? 2 : 0,
+  }}>
     {isLandscape && (
       <View
         style={{
