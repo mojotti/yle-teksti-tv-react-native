@@ -130,7 +130,6 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
 
       const srcWithCache = `${src}&cacheValid=${+new Date()}`;
 
-
       setTextTvResponse(mappedPage);
       setImgSrc(srcWithCache);
 
@@ -154,13 +153,38 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
         textTvResponse: mappedPage,
       };
     } catch (e) {
-      // console.log("error in fetch", e);
-      setErrorCode({ page, code: 418 });
+      const error = e as Error;
+      let errorCode = 418; // Default: generic client error
+      const errorMessage = error.message?.toLowerCase() || "";
+
+      // Classify error based on error message
+      if (
+        errorMessage.includes("network request failed") ||
+        errorMessage.includes("failed to fetch")
+      ) {
+        errorCode = 503; // Network connectivity issue
+      } else if (
+        errorMessage.includes("timeout") ||
+        errorMessage.includes("timed out")
+      ) {
+        errorCode = 504; // Timeout error
+      } else if (errorMessage.includes("abort")) {
+        errorCode = 499; // Request cancelled
+      } else if (errorMessage.includes("not found")) {
+        errorCode = 404; // Not found
+      } else if (
+        errorMessage.includes("unauthorized") ||
+        errorMessage.includes("forbidden")
+      ) {
+        errorCode = 401; // Authentication/authorization issue
+      }
+
+      setErrorCode({ page, code: errorCode });
 
       return {
         error: {
           page,
-          code: 418,
+          code: errorCode,
         },
       };
     }

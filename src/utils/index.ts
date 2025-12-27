@@ -14,9 +14,9 @@ export const isValidPage = (input: string) => {
   );
 };
 
-if (!APP_ID || !APP_KEY) {
-  throw new Error("Missing APP_ID or APP_KEY in environment variables");
-}
+export const hasValidEnvVariables = (): boolean => {
+  return !!(APP_ID && APP_KEY && APP_ID.trim() !== '' && APP_KEY.trim() !== '');
+};
 
 export const getPageImgSrc = (page: string, subPage = "1") => {
   return `https://external.api.yle.fi/v1/teletext/images/${page}/${subPage}.png?app_id=${APP_ID}&app_key=${APP_KEY}`;

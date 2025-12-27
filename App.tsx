@@ -21,28 +21,43 @@ import {
   SafeAreaProvider,
   SafeAreaInsetsContext,
 } from "react-native-safe-area-context";
+import { hasValidEnvVariables } from "./src/utils";
+import { ConfigErrorScreen } from "./src/components/config-error-screen";
 
 const Icon = _IonIcon as React.ElementType;
 
-const App: FC = () => (
-  <GestureHandlerRootView style={{ flex: 1 }}>
-    <SafeAreaProvider>
-      <AppStateProvider>
-        <WindowProvider>
-          <SettingsProvider>
-            <NavigationStatusProvider>
-              <PageProvider>
-                <NavigationContainer theme={DarkTheme}>
-                  <Navigator />
-                </NavigationContainer>
-              </PageProvider>
-            </NavigationStatusProvider>
-          </SettingsProvider>
-        </WindowProvider>
-      </AppStateProvider>
-    </SafeAreaProvider>
-  </GestureHandlerRootView>
-);
+const App: FC = () => {
+  // Check environment variables before rendering the app
+  if (!hasValidEnvVariables()) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ConfigErrorScreen />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppStateProvider>
+          <WindowProvider>
+            <SettingsProvider>
+              <NavigationStatusProvider>
+                <PageProvider>
+                  <NavigationContainer theme={DarkTheme}>
+                    <Navigator />
+                  </NavigationContainer>
+                </PageProvider>
+              </NavigationStatusProvider>
+            </SettingsProvider>
+          </WindowProvider>
+        </AppStateProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+};
 
 export default App;
 
