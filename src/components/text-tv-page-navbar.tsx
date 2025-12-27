@@ -17,14 +17,7 @@ import {
 } from "react-native";
 import _IonIcon from "@react-native-vector-icons/ionicons";
 
-import React, {
-  FC,
-  PropsWithChildren,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { FC, PropsWithChildren, useContext } from "react";
 import { infoAreaColor } from "../utils/colors";
 import { SettingsContext } from "../providers/settings";
 import { NavigationStatusContext } from "../providers/navigation-status";
@@ -47,66 +40,16 @@ export const TextTvPageNavBar: React.FC<{
   );
 
   const { applicationWindow, orientation } = useContext(WindowContext);
+
   const { width } = applicationWindow;
 
   const isLoading = isLoadingImg || isLoadingPageData;
-  const isLandscape = orientation === OrientationTypes.Landscape;
-  const isPageInFavorites = settings.favorites.includes(page);
 
-  const [displayNumber, setDisplayNumber] = useState(parseInt(page || "100"));
-  const targetNumber = useRef(parseInt(page || "100"));
-  const animationRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const hasUnknownError = error && error.code !== 404;
 
-  const intervalMs = 30; // Speed while loading
+  const isLandscape = orientation === OrientationTypes.Landscape;
 
-  // Start or update counting animation when page changes
-  useEffect(() => {
-    if (page) {
-      const newTarget = parseInt(page);
-      targetNumber.current = newTarget;
-
-      // If not loading, immediately set to target number
-      if (!isLoading) {
-        setDisplayNumber(newTarget);
-        return;
-      }
-
-      // Clear any existing animation
-      if (animationRef.current) {
-        clearInterval(animationRef.current);
-      }
-
-      // Start counting animation
-      animationRef.current = setInterval(() => {
-        setDisplayNumber((current) => {
-          if (current === targetNumber.current) {
-            if (animationRef.current) {
-              clearInterval(animationRef.current);
-            }
-            return targetNumber.current;
-          }
-          return current + (current < targetNumber.current ? 1 : -1);
-        });
-      }, intervalMs);
-    }
-
-    return () => {
-      if (animationRef.current) {
-        clearInterval(animationRef.current);
-      }
-    };
-  }, [page, isLoading]);
-
-  // Immediately jump to target number when loading stops
-  useEffect(() => {
-    if (!isLoading && displayNumber !== targetNumber.current) {
-      if (animationRef.current) {
-        clearInterval(animationRef.current);
-      }
-      setDisplayNumber(targetNumber.current);
-    }
-  }, [isLoading]);
+  const isPageInFavorites = settings.favorites.includes(page);
 
   const addPageToFavorites = () => {
     storeValue("favorites", [...new Set([...settings.favorites, page])].sort());
@@ -154,13 +97,15 @@ export const TextTvPageNavBar: React.FC<{
               />
             </TouchableOpacity>
           )}
-          <Text
-            style={{
-              ...styles.pageInfoText,
-              fontVariant: ["tabular-nums"],
-            }}>
-            {displayNumber.toString().padStart(3, "0")}
-          </Text>
+          {isLoading && !hasUnknownError && (
+            <ActivityIndicator size={fontSizeMedium + 8} color="#FFFFFF" />
+          )}
+          {!isLoading && (
+            <Text
+              style={{ ...styles.pageInfoText, fontVariant: ["tabular-nums"] }}>
+              {page || ""}
+            </Text>
+          )}
           {isLandscape && (
             <Text
               style={{ ...styles.pageInfoText, fontVariant: ["tabular-nums"] }}>
