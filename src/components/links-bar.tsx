@@ -347,7 +347,9 @@ const styles = StyleSheet.create({
   },
   link: {
     color: "#FFFFFF",
-    height: "100%",
+    // Avoid stretching the text to full container height, which
+    // breaks vertical centering in landscape on Android.
+    textAlignVertical: "center",
     fontFamily: Platform.OS === "ios" ? undefined : "monospace",
   },
   icon: {
