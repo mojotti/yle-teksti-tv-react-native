@@ -23,6 +23,7 @@ import {
 } from "react-native-safe-area-context";
 import { hasValidEnvVariables } from "./src/utils";
 import { ConfigErrorScreen } from "./src/components/config-error-screen";
+import { SettingsHeader } from "./src/components/settings-header";
 
 const Icon = _IonIcon as React.ElementType;
 
@@ -100,27 +101,13 @@ const Navigator: FC = () => {
               name="Settings"
               component={Settings}
               options={{
-                title: "Asetukset",
                 headerShown: true,
-                headerTitleAlign: "center",
-                headerBackImage: (props) => (
-                  <Icon
-                    name={
-                      Platform.OS === "ios"
-                        ? "chevron-back-outline"
-                        : "arrow-back-outline"
-                    }
-                    size={iconSizeLarge}
-                    color={Platform.OS === "ios" ? props.tintColor : "#FFFFFF"}
+                header: ({ navigation }) => (
+                  <SettingsHeader
+                    title="Asetukset"
+                    onBack={() => navigation.goBack()}
                   />
                 ),
-                headerStyle: {
-                  backgroundColor: "#1c1c1c",
-                  height: pageInfoHeight,
-                },
-                headerTitleStyle: {
-                  color: "#eeeeee",
-                },
               }}
             />
             {__DEV__ && (
