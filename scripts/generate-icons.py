@@ -2,7 +2,7 @@
 """Generate the app icon for iOS and Android.
 
 The icon is page 100 as people know it (blue header, cyan strip, black middle,
-green index block), drawn with Yle's own teletext glyphs and lit like a CRT:
+green index block, colour keys), drawn with Yle's own teletext glyphs and lit like a CRT:
 phosphor glow on the text, slight colour fringing, scanlines and curved glass.
 
 The glyph bitmaps in scripts/teletext-glyphs.json were taken from Yle's
@@ -35,6 +35,7 @@ CYAN = (40, 228, 255)
 GREEN = (36, 236, 70)
 WHITE = (250, 250, 250)
 YELLOW = (255, 232, 36)
+KEYS = ((255, 50, 60), (40, 235, 80), (255, 230, 40), (40, 228, 255))  # red, green, yellow, cyan
 
 # The "t:" mark from Yle's section pages, in sixels (each 1.5 wide : 1 tall).
 T_MARK = [
@@ -71,15 +72,27 @@ class Scene:
         return x + len(s) * cw
 
 
-def page(layout):
+def page(layout, dark=False):
     """layout "ios" fills the square; "android" pulls the content in to fit the
-    circular safe zone and centres it."""
+    circular safe zone and centres it.
+
+    Bands from the top: blue header, cyan strip, black sections, green index,
+    and a black strip with the four colour keys.
+
+    dark: the iOS dark-mode version. The bands sink to deep tints and the text
+    in them takes the band colour, so only the lettering and keys are lit."""
     android = layout == "android"
     s = Scene()
-    hb, cb, gb = 0.34, 0.415, 0.76
-    s.rect((-1, -1, 2, hb), BLUE)
-    s.rect((-1, hb, 2, cb), CYAN)
-    s.rect((-1, gb, 2, 2), GREEN)
+    band_blue, band_cyan, band_green = (BLUE, CYAN, GREEN) if not dark else ((5, 9, 52), (3, 30, 40), (3, 34, 12))
+    strip_text, index_text = (BLUE, BLUE) if not dark else (CYAN, GREEN)
+    band_glow = 0 if not dark else 0.7
+    if android:
+        hb, cb, gb, ge = 0.33, 0.40, 0.69, 0.80
+    else:
+        hb, cb, gb, ge = 0.32, 0.39, 0.70, 0.865
+    s.rect((-1, -1, 2, hb), band_blue)
+    s.rect((-1, hb, 2, cb), band_cyan)
+    s.rect((-1, gb, 2, ge), band_green)
     k = 0.80 if android else 1.0
 
     def left(chars, cw):
@@ -98,17 +111,27 @@ def page(layout):
     s.text(hx + 5 * mcw + gap, hy - tw, "Teksti-TV", tw, WHITE, tall=2, glow=0.5)
     # Cyan strip.
     sw = 0.058 * k
-    s.text(left(13, sw), hb + (cb - hb - sw) / 2, "100 HAKEMISTO", sw, BLUE, glow=0)
+    s.text(left(13, sw), hb + (cb - hb - sw) / 2, "100 HAKEMISTO", sw, strip_text, glow=band_glow)
     # Sections, yellow numbers and white names.
     rw = 0.078 * k
     for j, (num, name) in enumerate((("101", "Uutiset"), ("201", "Urheilu"))):
         y = cb + (gb - cb) * (0.27 + 0.48 * j) - rw / 2
         x = s.text(left(11, rw), y, num + " ", rw, YELLOW)
         s.text(x, y, name, rw, WHITE)
-    # Green index block in blue.
+    # Green index block in blue (green on dark).
     iw = 0.05 * k
+    iy = gb + ((ge - gb) - iw * 2.15) / 2 - iw * 0.08
     for j, line in enumerate(("300 OHJELMAT  470", "160 TALOUS    575")):
-        s.text(left(11, rw), gb + 0.04 + j * iw * 1.15, line, iw, BLUE, glow=0)
+        s.text(left(11, rw), iy + j * iw * 1.15, line, iw, index_text, glow=band_glow)
+    # Colour keys. On Android the row sits higher and narrower to stay in the circle.
+    if android:
+        x0, x1, y0, y1 = 0.22, 0.78, 0.835, 0.878
+    else:
+        x0, x1, y0, y1 = 0.07, 0.93, 0.895, 0.955
+    kg = 0.025 * k
+    kw = (x1 - x0 - 3 * kg) / 4
+    for i, c in enumerate(KEYS):
+        s.bits(x0 + i * (kw + kg), y0, kw, y1 - y0, np.ones((1, 1), bool), c, glow=0.9)
     return s
 
 
@@ -280,7 +303,10 @@ def layers(scene, px, view):
 
 
 def grayscale(img):
-    return img.convert("L").convert("RGB")
+    """Luminance, stretched so the brightest lettering reaches white."""
+    g = np.asarray(img.convert("L"), float)
+    g = np.clip(g / max(1.0, np.percentile(g, 99.5)) * 255, 0, 255)
+    return Image.fromarray(g.astype(np.uint8)).convert("RGB")
 
 
 def masked(img, shape):
@@ -311,14 +337,16 @@ def save(img, path):
 
 def ios():
     base = os.path.join(ROOT, "ios/TekstiTVReactNativeApp/Images.xcassets/AppIcon.appiconset")
-    img = flat(page("ios"), 1024)
-    save(img, os.path.join(base, "AppIcon-1024.png"))
-    save(grayscale(img), os.path.join(base, "AppIcon-1024-tinted.png"))
+    save(flat(page("ios"), 1024), os.path.join(base, "AppIcon-1024.png"))
+    dark = flat(page("ios", dark=True), 1024)
+    save(dark, os.path.join(base, "AppIcon-1024-dark.png"))
+    # Tinted icons are coloured by iOS from luminance: light lettering on black works best.
+    save(grayscale(dark), os.path.join(base, "AppIcon-1024-tinted.png"))
     contents = {
         "images": [
             {"filename": "AppIcon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
             {"appearances": [{"appearance": "luminosity", "value": "dark"}],
-             "filename": "AppIcon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+             "filename": "AppIcon-1024-dark.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
             {"appearances": [{"appearance": "luminosity", "value": "tinted"}],
              "filename": "AppIcon-1024-tinted.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
         ],

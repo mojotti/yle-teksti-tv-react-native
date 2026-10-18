@@ -3,6 +3,7 @@ import React, {
   PropsWithChildren,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -21,10 +22,13 @@ export type TargetId =
 const CoachContext = createContext<{
   rects: Partial<Record<TargetId, Rect>>;
   setRect: (id: TargetId, rect: Rect) => void;
-}>({ rects: {}, setRect: () => {} });
+  /** Measure functions of the targets on screen. */
+  measurers: React.MutableRefObject<Map<TargetId, () => void>>;
+}>({ rects: {}, setRect: () => {}, measurers: { current: new Map() } });
 
 export const CoachProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const [rects, setRects] = useState<Partial<Record<TargetId, Rect>>>({});
+  const measurers = useRef(new Map<TargetId, () => void>());
   const setRect = useCallback((id: TargetId, rect: Rect) => {
     setRects((r) => {
       const old = r[id];
@@ -41,7 +45,7 @@ export const CoachProvider: React.FC<PropsWithChildren> = ({ children }) => {
     });
   }, []);
   return (
-    <CoachContext.Provider value={{ rects, setRect }}>
+    <CoachContext.Provider value={{ rects, setRect, measurers }}>
       {children}
     </CoachContext.Provider>
   );
@@ -49,7 +53,7 @@ export const CoachProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
 /** Lets the guide find an element on screen. */
 export const useCoachTarget = (id: TargetId) => {
-  const { setRect } = useContext(CoachContext);
+  const { setRect, measurers } = useContext(CoachContext);
   const ref = useRef<View>(null);
   const onLayout = useCallback(() => {
     // Wait a frame so the window position is final.
@@ -59,6 +63,17 @@ export const useCoachTarget = (id: TargetId) => {
       ),
     );
   }, [id, setRect]);
+  // The guide re-measures when it opens: a layout measured while another
+  // screen was on top (settings) can be off.
+  useEffect(() => {
+    const map = measurers.current;
+    map.set(id, onLayout);
+    return () => {
+      if (map.get(id) === onLayout) {
+        map.delete(id);
+      }
+    };
+  }, [id, onLayout, measurers]);
   return { ref, onLayout };
 };
 
@@ -97,14 +112,33 @@ export const STEPS: { target: TargetId; title: string; text: string }[] = [
 
 /** Three-step first-run guide. Steps whose target isn't on screen are skipped. */
 export const Onboarding: React.FC<{ onDone: () => void }> = ({ onDone }) => {
-  const { rects } = useContext(CoachContext);
+  const { rects, measurers } = useContext(CoachContext);
   const [step, setStep] = useState(0);
+
   const [origin, setOrigin] = useState<{
     x: number;
     y: number;
     height: number;
   } | null>(null);
   const rootRef = useRef<View>(null);
+
+  // Measure everything again now, and once the screen has settled (after a
+  // screen transition, e.g. when started from settings).
+  useEffect(() => {
+    const all = () => {
+      measurers.current.forEach((measure) => measure());
+      rootRef.current?.measureInWindow((x, y, _w, height) =>
+        setOrigin((o) =>
+          o && o.x === x && o.y === y && o.height === height
+            ? o
+            : { x, y, height },
+        ),
+      );
+    };
+    all();
+    const timers = [150, 450, 900].map((ms) => setTimeout(all, ms));
+    return () => timers.forEach(clearTimeout);
+  }, [measurers, step]);
 
   const steps = STEPS.filter((s) => rects[s.target]);
   const current = steps[Math.min(step, steps.length - 1)];
