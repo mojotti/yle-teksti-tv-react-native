@@ -136,6 +136,7 @@ export const FastextRow: React.FC<{ c: HomeControls }> = ({ c }) => {
           accessibilityLabel={k.label}
           style={({ pressed }) => [
             styles.key,
+            theme.glass && styles.glassKey,
             {
               borderRadius: theme.radius.fastext,
               opacity: !k.enabled ? 0.3 : pressed ? 0.6 : 1,
@@ -286,6 +287,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 6,
+  },
+  // Lasi keys keep their earlier height now that the captions are gone.
+  glassKey: {
     minHeight: 54,
   },
   glow: {
