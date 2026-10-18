@@ -3,6 +3,7 @@ import {
   getPageSize,
   getPageTitle,
   isValidPage,
+  prettyTitle,
 } from "../src/utils";
 import { TextTvResponse } from "../src/types/response";
 
@@ -87,10 +88,10 @@ describe("getPageTitle", () => {
   it("falls back to the section heading", () => {
     expect(
       getPageTitle(response("", ["   ULKOMAAT        YLE  SUNNUNTAI       "])),
-    ).toBe("ULKOMAAT");
+    ).toBe("Ulkomaat");
     expect(
       getPageTitle(response("", ["   NBA-KORIPALLO            22.10.  1/1 "])),
-    ).toBe("NBA-KORIPALLO");
+    ).toBe("NBA-koripallo");
   });
 
   it("skips subpage counters and empty lines", () => {
@@ -101,7 +102,7 @@ describe("getPageTitle", () => {
           "     DIGI-TV- JA TEKSTI-TV-TIETOA       ",
         ]),
       ),
-    ).toBe("DIGI-TV- JA TEKSTI-TV-TIETOA");
+    ).toBe("Digi-TV- ja teksti-TV-tietoa");
     expect(getPageTitle(response("", [undefined, undefined]))).toBe("");
   });
 });
@@ -121,5 +122,19 @@ describe("isValidPage", () => {
     expect(isValidPage("900")).toBe(false);
     expect(isValidPage("099")).toBe(false);
     expect(isValidPage("12")).toBe(false);
+  });
+});
+
+describe("prettyTitle", () => {
+  it("recases all-caps headings, keeping abbreviations", () => {
+    expect(prettyTitle("NHL-JÄÄKIEKKO")).toBe("NHL-jääkiekko");
+    expect(prettyTitle("SM-LIIGA")).toBe("SM-liiga");
+    expect(prettyTitle("TALOUS")).toBe("Talous");
+    expect(prettyTitle("YLE")).toBe("Yle");
+  });
+
+  it("leaves mixed-case titles alone", () => {
+    expect(prettyTitle("Sää liikenne")).toBe("Sää liikenne");
+    expect(prettyTitle("Uutiset")).toBe("Uutiset");
   });
 });

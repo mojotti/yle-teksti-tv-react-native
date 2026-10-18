@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { tt, useTheme } from "../../theme/theme";
 import { Icon } from "../ui";
+import { formatClock } from "../../utils/offline";
 
 /** True once `active` has stayed true for `ms`, so quick loads don't flash. */
 export const useDelayed = (active: boolean, ms = 250) => {
@@ -98,6 +99,29 @@ export const NotFoundBand: React.FC<{ page?: string; onClose: () => void }> = ({
         style={[theme.number(24), styles.bandText]}
       >{`Sivua ${page} ei ole`}</Text>
       <Icon name="close" size={20} color="#fff" />
+    </Pressable>
+  );
+};
+
+/** Shown while a saved copy stands in for a page that couldn't load. */
+export const StaleBanner: React.FC<{
+  savedAt?: number;
+  onRetry: () => void;
+}> = ({ savedAt, onRetry }) => {
+  if (!savedAt) {
+    return null;
+  }
+  return (
+    <Pressable
+      onPress={onRetry}
+      style={styles.stale}
+      accessibilityRole="button"
+    >
+      <Icon name="cloud-offline-outline" size={16} color={tt.yellow} />
+      <Text style={styles.staleText} numberOfLines={1}>
+        {`Ei yhteyttä · näytetään sivu ${formatClock(savedAt)}`}
+      </Text>
+      <Text style={styles.staleAction}>Päivitä</Text>
     </Pressable>
   );
 };
@@ -274,6 +298,24 @@ const styles = StyleSheet.create({
   },
   bandText: {
     color: "#fff",
+  },
+  stale: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#2a2410",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  staleText: {
+    flex: 1,
+    color: tt.yellow,
+    fontSize: 13,
+  },
+  staleAction: {
+    color: tt.yellow,
+    fontSize: 13,
+    fontWeight: "700",
   },
   menu: {
     position: "absolute",

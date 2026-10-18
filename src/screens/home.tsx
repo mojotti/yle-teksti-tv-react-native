@@ -45,6 +45,7 @@ import {
   ErrorPage,
   MoreMenu,
   NotFoundBand,
+  StaleBanner,
   ProgressLine,
   useDelayed,
 } from "../components/home/overlays";
@@ -67,6 +68,7 @@ const HomeScreen: React.FC = () => {
     invalidateCache,
     textTvResponse,
     imgSrc,
+    stale,
   } = useContext(PageContext);
   const nav = useContext(NavigationStatusContext);
   const { page, subPage, setSubPage, history, pushHistory, popHistory } = nav;
@@ -352,6 +354,10 @@ const HomeScreen: React.FC = () => {
               page={notFound}
               onClose={() => setNotFound(undefined)}
             />
+            <StaleBanner
+              savedAt={stale?.page === page ? stale.savedAt : undefined}
+              onRetry={() => fetchPage(page, subPage, true)}
+            />
             {pageArea}
           </View>
           {settings.showDock && <DockColumn onPageChange={goTo} />}
@@ -377,6 +383,10 @@ const HomeScreen: React.FC = () => {
               <NotFoundBand
                 page={notFound}
                 onClose={() => setNotFound(undefined)}
+              />
+              <StaleBanner
+                savedAt={stale?.page === page ? stale.savedAt : undefined}
+                onRetry={() => fetchPage(page, subPage, true)}
               />
               {pageArea}
               <FastextRow c={c} />

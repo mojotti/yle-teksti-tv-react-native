@@ -17,6 +17,18 @@ import { TextTvResponse } from "../types/response";
 import { NavigationStatusContext } from "./navigation-status";
 import { AppStateContext } from "./app-state";
 import { SettingsContext } from "./settings";
+import NetInfo from "@react-native-community/netinfo";
+import {
+  clearOffline,
+  downloadPages,
+  getOfflinePage,
+  getOfflineSummary,
+  OfflineSummary,
+} from "../utils/offline";
+
+/** Errors where a saved copy is better than an error page. */
+const isConnectionError = (code: number) => code !== 404 && code !== 401;
+const AUTO_DOWNLOAD_EVERY_MS = 60 * 60 * 1000;
 
 export interface PageFetchError {
   page: string;
@@ -48,6 +60,14 @@ interface ContextItem extends PageDetails {
   invalidateCache: () => void;
   /** Page titles seen so far ("Uutiset", "Urheilu"…), keyed by number. */
   pageNames: Record<string, string>;
+  /** Set while showing a saved copy because the page couldn't be fetched. */
+  stale?: { page: string; savedAt: number };
+  offline: {
+    summary?: OfflineSummary;
+    progress?: { done: number; total: number };
+    download: () => Promise<void>;
+    clear: () => Promise<void>;
+  };
 }
 
 type CacheItem = {
@@ -94,6 +114,10 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
   const [pageNames, setPageNames] = useState<Record<string, string>>({});
   const [namesLoaded, setNamesLoaded] = useState(false);
   const backfilled = useRef(false);
+  const [stale, setStale] = useState<{ page: string; savedAt: number }>();
+  const [summary, setSummary] = useState<OfflineSummary>();
+  const [progress, setProgress] = useState<{ done: number; total: number }>();
+  const { appState } = useContext(AppStateContext);
   const { settings, loaded: settingsLoaded } = useContext(SettingsContext);
 
   const { addPageLoad } = useContext(AppStateContext);
@@ -157,7 +181,8 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
     const id = ++requestId.current;
     setError(undefined);
 
-    const show = (item: CacheItem) => {
+    const show = (item: CacheItem, savedAt?: number) => {
+      setStale(savedAt ? { page, savedAt } : undefined);
       setImgSrc(item.imgSrc);
       setTextTvResponse(item.textTvResponse);
       if (setNewPage) {
@@ -187,7 +212,34 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
     } catch (e) {
       const code = (e as { status?: number }).status ?? classifyError(e);
       const fetchError = { page, code };
+
+      // No connection: fall back to an expired in-memory copy, then to a
+      // page saved for offline reading.
+      if (isConnectionError(code)) {
+        const old = cache.current[`${page}-${subPage}`];
+        const saved = old
+          ? undefined
+          : await getOfflinePage(page).catch(() => undefined);
+        const fallback: CacheItem | undefined = old
+          ? old
+          : saved?.images[subPage]
+            ? {
+                imgSrc: saved.images[subPage],
+                textTvResponse: saved.response,
+                timestamp: saved.savedAt,
+              }
+            : undefined;
+        if (fallback && id === requestId.current) {
+          show(fallback, fallback.timestamp);
+          return {
+            imgSrc: fallback.imgSrc,
+            textTvResponse: fallback.textTvResponse,
+          };
+        }
+      }
+
       if (id === requestId.current) {
+        setStale(undefined);
         setError(fetchError);
         setPageDataLoadingStatus(false);
         setImgLoadingStatus(false);
@@ -257,6 +309,56 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
     }
   };
 
+  const downloadOffline = async () => {
+    if (progress) {
+      return;
+    }
+    setProgress({ done: 0, total: settings.favorites.length });
+    try {
+      setSummary(
+        await downloadPages(settings.favorites, (done, total) =>
+          setProgress({ done, total }),
+        ),
+      );
+    } finally {
+      setProgress(undefined);
+    }
+  };
+
+  const clearOfflineData = async () => {
+    await clearOffline();
+    setSummary(undefined);
+  };
+
+  useEffect(() => {
+    getOfflineSummary()
+      .then(setSummary)
+      .catch(() => {});
+  }, []);
+
+  // Automatic download on Wi-Fi when the app comes to the foreground.
+  useEffect(() => {
+    if (
+      appState !== "active" ||
+      !settingsLoaded ||
+      !settings.offlineAutoDownload
+    ) {
+      return;
+    }
+    if (!settings.favorites.length) {
+      return;
+    }
+    if (summary && Date.now() - summary.savedAt < AUTO_DOWNLOAD_EVERY_MS) {
+      return;
+    }
+    NetInfo.fetch().then((state) => {
+      if (state.type === "wifi" && state.isConnected) {
+        downloadOffline();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appState, settingsLoaded, settings.offlineAutoDownload]);
+
   const invalidateCache = () => {
     cache.current = {};
   };
@@ -268,6 +370,13 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
         prefetch,
         lookupPage,
         loadResponse,
+        stale,
+        offline: {
+          summary,
+          progress,
+          download: downloadOffline,
+          clear: clearOfflineData,
+        },
         invalidateCache,
         error,
         imgSrc,

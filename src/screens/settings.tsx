@@ -16,7 +16,8 @@ import {
   SettingsContext,
 } from "../providers/settings";
 import { PageContext } from "../providers/page";
-import { ratioHeights } from "../utils";
+import { prettyTitle, ratioHeights } from "../utils";
+import { formatClock } from "../utils/offline";
 import { ThemeName, themeLabels, themes, tt, useTheme } from "../theme/theme";
 import {
   Footnote,
@@ -179,6 +180,10 @@ export const SettingsScreen: React.FC = () => {
           </Row>
         </Group>
 
+        <GroupHeader title="Offline" />
+        <OfflineGroup />
+        <Footnote text="Lataa suosikit ja niiden alasivut puhelimeen, niin voit lukea niitä ilman yhteyttä, esimerkiksi lentokoneessa. Muut sivut vaativat yhteyden." />
+
         <GroupHeader title="Tietoa" />
         <Group>
           <Row
@@ -242,6 +247,60 @@ export const SettingsScreen: React.FC = () => {
   );
 };
 
+const OfflineGroup: React.FC = () => {
+  const theme = useTheme();
+  const { settings, update } = useContext(SettingsContext);
+  const { offline } = useContext(PageContext);
+  const { summary, progress } = offline;
+  const none = !settings.favorites.length;
+
+  const status = progress
+    ? `Ladataan ${progress.done}/${progress.total}…`
+    : summary
+      ? `${summary.pages} sivua · ${summary.subPages} alasivua · ${Math.max(1, Math.round(summary.bytes / 1024))} kt`
+      : "Ei ladattuja sivuja";
+
+  return (
+    <Group>
+      <Row
+        label="Lataa suosikit Wi-Fissä"
+        detail="Automaattisesti, kun sovellus avataan"
+      >
+        <Toggle
+          value={settings.offlineAutoDownload}
+          onChange={(v) => update({ offlineAutoDownload: v })}
+          disabled={none}
+        />
+      </Row>
+      <Row
+        label={
+          summary && !progress
+            ? `Ladattu ${formatClock(summary.savedAt)}`
+            : "Ladatut sivut"
+        }
+        detail={status}
+      >
+        {summary && !progress ? (
+          <Pressable
+            onPress={offline.clear}
+            hitSlop={8}
+            accessibilityRole="button"
+          >
+            <Text style={{ color: theme.textMuted, fontSize: 15 }}>Poista</Text>
+          </Pressable>
+        ) : null}
+      </Row>
+      <Row
+        label={progress ? "Ladataan…" : "Lataa nyt"}
+        onPress={offline.download}
+        disabled={none || !!progress}
+      >
+        <Icon name="cloud-download-outline" size={20} color={theme.textMuted} />
+      </Row>
+    </Group>
+  );
+};
+
 const Favorites: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
   const theme = useTheme();
   const { settings, update } = useContext(SettingsContext);
@@ -266,7 +325,7 @@ const Favorites: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
             style={[styles.favName, { color: theme.textMuted }]}
             numberOfLines={2}
           >
-            {pageNames[page] ?? ""}
+            {prettyTitle(pageNames[page] ?? "")}
           </Text>
           <IconButton
             name="chevron-up"

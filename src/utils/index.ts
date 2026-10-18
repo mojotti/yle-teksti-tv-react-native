@@ -164,6 +164,71 @@ export const getPageSize = (
   };
 };
 
+// Abbreviations that stay in capitals when an all-caps title is recased.
+const ABBREVIATIONS = new Set([
+  "TV",
+  "NBA",
+  "NHL",
+  "NFL",
+  "MLB",
+  "KHL",
+  "AHL",
+  "MLS",
+  "UFC",
+  "ATP",
+  "WTA",
+  "F1",
+  "MM",
+  "EM",
+  "SM",
+  "EU",
+  "USA",
+  "UK",
+  "UEFA",
+  "FIFA",
+  "IT",
+  "HS",
+  "PM",
+]);
+
+const recaseSegment = (segment: string, first: boolean) => {
+  if (ABBREVIATIONS.has(segment)) {
+    return segment;
+  }
+  const lower = segment.toLocaleLowerCase("fi");
+  return first
+    ? lower.charAt(0).toLocaleUpperCase("fi") + lower.slice(1)
+    : lower;
+};
+
+/**
+ * Teletext headings are often all caps ("NBA-KORIPALLO"). Those are turned
+ * into sentence case, keeping known abbreviations ("NBA-koripallo").
+ * Titles with any lower-case letters are left as they are.
+ */
+export const prettyTitle = (title: string): string => {
+  if (title !== title.toLocaleUpperCase("fi") || !/\p{L}/u.test(title)) {
+    return title;
+  }
+  let first = true;
+  return title
+    .split(" ")
+    .map((word) =>
+      word
+        .split("-")
+        .map((segment) => {
+          if (!segment) {
+            return segment;
+          }
+          const out = recaseSegment(segment, first);
+          first = false;
+          return out;
+        })
+        .join("-"),
+    )
+    .join(" ");
+};
+
 /**
  * A short title for a page: the API's name when it has one, otherwise the
  * section heading from the page's first lines ("ULKOMAAT", "NBA-KORIPALLO").
@@ -171,7 +236,7 @@ export const getPageSize = (
 export const getPageTitle = (response: TextTvResponse): string => {
   const name = response.page.name?.trim();
   if (name) {
-    return name;
+    return prettyTitle(name);
   }
   const lines =
     response.page.subPages[0]?.content
@@ -183,7 +248,7 @@ export const getPageTitle = (response: TextTvResponse): string => {
       .map((x) => x.trim())
       .find((x) => x && !/^\d+\/\d+$/.test(x));
     if (part) {
-      return part;
+      return prettyTitle(part);
     }
   }
   return "";

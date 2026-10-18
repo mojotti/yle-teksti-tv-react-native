@@ -15,6 +15,7 @@ import { SettingsContext } from "../../providers/settings";
 import { getPageImgSrc, getPageTitle } from "../../utils";
 import { TextTvResponse } from "../../types/response";
 import { tt, useTheme } from "../../theme/theme";
+import { getOfflinePage } from "../../utils/offline";
 
 /** Teletext page images are 720 × 432. */
 const IMAGE_RATIO = 432 / 720;
@@ -86,11 +87,27 @@ const Card: React.FC<{
   const theme = useTheme();
   const { loadResponse } = useContext(PageContext);
   const [response, setResponse] = useState<TextTvResponse | null>();
+  // Saved images, used when the page can't be fetched.
+  const [saved, setSaved] = useState<Record<string, string>>();
   const [current, setCurrent] = useState(1);
 
   useEffect(() => {
     let alive = true;
-    loadResponse(page, true).then((r) => alive && setResponse(r ?? null));
+    loadResponse(page, true).then(async (r) => {
+      if (!alive) {
+        return;
+      }
+      if (r) {
+        setSaved(undefined);
+        setResponse(r);
+        return;
+      }
+      const offline = await getOfflinePage(page).catch(() => undefined);
+      if (alive) {
+        setSaved(offline?.images);
+        setResponse(offline?.response ?? null);
+      }
+    });
     return () => {
       alive = false;
     };
@@ -160,7 +177,9 @@ const Card: React.FC<{
             >
               <Image
                 source={{
-                  uri: `${getPageImgSrc(page, item)}&cacheValid=${stamp}`,
+                  uri:
+                    saved?.[item] ??
+                    `${getPageImgSrc(page, item)}&cacheValid=${stamp}`,
                 }}
                 resizeMode="stretch"
                 style={{ width, height }}
