@@ -47,6 +47,19 @@ describe("buildPageModel", () => {
     expect(m.title).toBeUndefined();
   });
 
+  it("keeps the title when the page on screen is loaded again (home from the feed)", () => {
+    const m = buildPageModel({
+      ...base,
+      page: "100",
+      pending: "100",
+      response: response({
+        number: "100",
+        subPages: [{ text: ["   KOTIMAA   YLE"] }],
+      }),
+    });
+    expect(m.title).toBe("Kotimaa");
+  });
+
   it("shows typed digits while the keypad is open", () => {
     expect(
       buildPageModel({ ...base, keypadOpen: true, digits: "" }).pillText,

@@ -66,8 +66,10 @@ export const buildPageModel = (input: PageModelInput): PageModel => {
     pillText: keypadOpen
       ? (digits + "___").slice(0, 3)
       : (pending ?? input.page),
+    // Hidden while another page is on its way; a pending number equal to
+    // the page on screen (reloading it) keeps the title.
     title:
-      response && !pending && !keypadOpen
+      response && (!pending || pending === input.page) && !keypadOpen
         ? getPageTitle(response, subPage)
         : undefined,
     subPage,

@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 12,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: 22,
   },
   subVertical: {
     flexDirection: "column",

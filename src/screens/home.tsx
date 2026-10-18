@@ -432,7 +432,9 @@ const HomeScreen: React.FC = () => {
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       {theme.glass && settings.ambientGlow && <Ambient src={imgSrc} />}
       {isLandscape && !feed ? (
-        <View style={styles.row}>
+        // Keyed by theme: Android keeps square corners when a border is
+        // added to a view that is already rounded, so views are rebuilt.
+        <View key={settings.theme} style={styles.row}>
           <Rail c={c} />
           <View style={styles.flex}>
             <ProgressLine active={showLoading} />
@@ -449,7 +451,7 @@ const HomeScreen: React.FC = () => {
           {loaded && settings.showDock && <DockColumn onPageChange={goTo} />}
         </View>
       ) : (
-        <>
+        <React.Fragment key={settings.theme}>
           {feed ? (
             <>
               <FeedHeader
@@ -479,7 +481,7 @@ const HomeScreen: React.FC = () => {
               {loaded && settings.showDock && <Dock onPageChange={goTo} />}
             </>
           )}
-        </>
+        </React.Fragment>
       )}
       <Keypad
         visible={keypadOpen}
