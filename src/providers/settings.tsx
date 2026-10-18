@@ -9,6 +9,8 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { ThemeName } from "../theme/theme";
+
+const themeNames: ThemeName[] = ["teletext", "glass"];
 import { setPortraitLock } from "../utils/native";
 
 /** Page height relative to width in portrait (landscape always uses TV 4:3). */
@@ -92,19 +94,20 @@ const loadSettings = async (): Promise<Settings> => {
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
   if (stored) {
-    return { ...defaultSettings, ...JSON.parse(stored) };
+    const parsed = { ...defaultSettings, ...JSON.parse(stored) };
+    // Themes that no longer exist ("classic") fall back to the default.
+    if (!themeNames.includes(parsed.theme)) {
+      parsed.theme = defaultSettings.theme;
+    }
+    return parsed;
   }
 
   const [ratio, highlight, favorites, icon] = await Promise.all(
     LEGACY_KEYS.map((key) => AsyncStorage.getItem(key)),
   );
 
-  const isUpgrade = [ratio, highlight, favorites, icon].some((v) => v !== null);
-
   return {
     ...defaultSettings,
-    // People updating from 2.4 keep the look they know; they can switch.
-    theme: isUpgrade ? "classic" : defaultSettings.theme,
     screenRatio: legacyRatio(ratio),
     highlightScreenLinks: highlight === "true",
     favorites: favorites ? favorites.split(",").filter(Boolean) : [],

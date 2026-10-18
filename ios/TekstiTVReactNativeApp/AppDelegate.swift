@@ -54,11 +54,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     window = UIWindow(windowScene: windowScene)
 
+    // A widget tap launches with a tekstitv:// link; RN reads it as the initial URL.
+    let launchOptions = connectionOptions.urlContexts.first.map {
+      [UIApplication.LaunchOptionsKey.url: $0.url]
+    }
+
     appDelegate.reactNativeFactory?.startReactNative(
       withModuleName: "TekstiTVReactNativeApp",
       in: window,
-      launchOptions: nil
+      launchOptions: launchOptions
     )
+  }
+
+  func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+    guard let url = URLContexts.first?.url else { return }
+    RCTLinkingManager.application(UIApplication.shared, open: url, options: [:])
   }
 }
 

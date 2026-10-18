@@ -11,12 +11,19 @@ import React, {
 import { Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { getPageImgSrc, getPageJsonPath, getPageTitle } from "../utils";
+import {
+  getPageImgSrc,
+  getPageJsonPath,
+  getPageTitle,
+  prettyTitle,
+} from "../utils";
 import { mapTextTvResponse } from "../utils/mapper";
 import { TextTvResponse } from "../types/response";
 import { NavigationStatusContext } from "./navigation-status";
 import { AppStateContext } from "./app-state";
 import { SettingsContext } from "./settings";
+import { setWidgetData } from "../utils/native";
+import { APP_ID, APP_KEY } from "@env";
 import NetInfo from "@react-native-community/netinfo";
 import {
   clearOffline,
@@ -271,6 +278,28 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsLoaded, namesLoaded]);
+
+  // Keep the home-screen widget's copy of favourites and titles current.
+  useEffect(() => {
+    if (!settingsLoaded) {
+      return;
+    }
+    const t = setTimeout(() => {
+      const titles: Record<string, string> = {};
+      settings.favorites.forEach((p) => {
+        if (pageNames[p]) {
+          titles[p] = prettyTitle(pageNames[p]);
+        }
+      });
+      setWidgetData({
+        appId: APP_ID ?? "",
+        appKey: APP_KEY ?? "",
+        favorites: settings.favorites,
+        titles,
+      });
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [settingsLoaded, settings.favorites, pageNames]);
 
   const prefetch = (page: string, subPage = "1") => {
     if (getCached(page, subPage)) {

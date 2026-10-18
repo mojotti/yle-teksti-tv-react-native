@@ -10,4 +10,23 @@
         <item name="android:statusBarColor">#000000</item>
     </style>
 
+    <!-- One colour key in the widget -->
+    <style name="WidgetKey">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginHorizontal">2dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">#FF000000</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- Page picker shown when a widget is added -->
+    <style name="WidgetConfigTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#FF121418</item>
+        <item name="android:statusBarColor">#FF121418</item>
+        <item name="android:navigationBarColor">#FF121418</item>
+    </style>
+
 </resources>

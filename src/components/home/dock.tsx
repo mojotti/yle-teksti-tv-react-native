@@ -7,7 +7,7 @@ import { NavigationStatusContext } from "../../providers/navigation-status";
 import { getLinkPages } from "../../utils";
 import { useTheme } from "../../theme/theme";
 import { favoriteIconName } from "./controls";
-import { Chip, IconButton } from "../ui";
+import { Chip } from "../ui";
 import type { HomeScreenNavigationProp } from "../../../App";
 
 type Section = {
@@ -78,10 +78,6 @@ export const Dock: React.FC<{ onPageChange: (page: string) => void }> = ({
   const sections = useSections();
   const { page } = useContext(NavigationStatusContext);
 
-  if (theme.layout.classicDock) {
-    return <ClassicDock sections={sections} onPageChange={onPageChange} />;
-  }
-
   return (
     <View
       style={[
@@ -105,54 +101,6 @@ export const Dock: React.FC<{ onPageChange: (page: string) => void }> = ({
             current={page}
             onPageChange={onPageChange}
           />
-        </View>
-      ))}
-    </View>
-  );
-};
-
-/** The original bar: a tab label per row and the settings cog on the right. */
-const ClassicDock: React.FC<{
-  sections: Section[];
-  onPageChange: (page: string) => void;
-}> = ({ sections, onPageChange }) => {
-  const theme = useTheme();
-  const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { page } = useContext(NavigationStatusContext);
-  return (
-    <View style={[styles.classicDock, { backgroundColor: theme.bg }]}>
-      {sections.map((s, i) => (
-        <View key={s.title}>
-          <View style={styles.classicTabRow}>
-            <Text
-              style={[
-                styles.classicTab,
-                { backgroundColor: theme.chrome, color: theme.textMuted },
-              ]}
-            >
-              {s.title === "Suosikit" ? "Suosikkisivut" : s.title}
-            </Text>
-          </View>
-          <View style={[styles.classicRow, { backgroundColor: theme.chrome }]}>
-            <View style={styles.flex}>
-              <ChipScroller
-                pages={s.pages}
-                icon={s.icon}
-                current={page}
-                onPageChange={onPageChange}
-              />
-            </View>
-            {i === 0 && (
-              <View style={styles.cog}>
-                <IconButton
-                  name="cog-outline"
-                  size={28}
-                  label="Asetukset"
-                  onPress={() => navigation.navigate("Settings")}
-                />
-              </View>
-            )}
-          </View>
         </View>
       ))}
     </View>
@@ -237,34 +185,6 @@ export const DockColumn: React.FC<{ onPageChange: (page: string) => void }> = ({
 };
 
 const styles = StyleSheet.create({
-  classicDock: {
-    paddingBottom: 2,
-  },
-  classicTabRow: {
-    flexDirection: "row",
-  },
-  classicTab: {
-    fontSize: 13,
-    paddingHorizontal: 8,
-    paddingTop: 4,
-    paddingBottom: 2,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    overflow: "hidden",
-  },
-  classicRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  flex: {
-    flex: 1,
-  },
-  cog: {
-    borderLeftWidth: 1.5,
-    borderLeftColor: "rgba(96,96,96,0.4)",
-    paddingHorizontal: 4,
-  },
   dock: {
     paddingTop: 4,
     paddingBottom: 8,

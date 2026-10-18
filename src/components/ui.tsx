@@ -13,26 +13,6 @@ import { tt, useTheme } from "../theme/theme";
 
 export const Icon = _IonIcon as React.ElementType;
 
-/**
- * A CSS gradient as its own layer behind a view's content. Android crashes
- * when `experimental_backgroundImage` changes on a mounted view, so the
- * layer is mounted (keyed by the gradient) instead of restyled.
- */
-export const GradientLayer: React.FC<{
-  gradient?: string;
-  radius?: number;
-}> = ({ gradient, radius = 0 }) =>
-  gradient ? (
-    <View
-      key={gradient}
-      pointerEvents="none"
-      style={[
-        StyleSheet.absoluteFill,
-        { borderRadius: radius, experimental_backgroundImage: gradient },
-      ]}
-    />
-  ) : null;
-
 /** A page number as a tappable chip. */
 export const Chip: React.FC<{
   page: string;
@@ -61,12 +41,6 @@ export const Chip: React.FC<{
         style,
       ]}
     >
-      {!current && (
-        <GradientLayer
-          gradient={theme.chipGradient}
-          radius={theme.radius.chip}
-        />
-      )}
       {icon ? (
         <Icon
           name={icon}

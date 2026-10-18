@@ -10,12 +10,39 @@
 		0C80B921A6F3F58F76C31292 /* libPods-TekstiTVReactNativeApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-TekstiTVReactNativeApp.a */; };
 		11409643254B478537EC4D85 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		2A5F2901524CC096981587ED /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80EC3ADF6DE6F47E55D8F14D /* Foundation.framework */; };
+		2E4F5AE80A792133DC541E82 /* TekstiTVWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C1C3547B69F1CF4209C28B9 /* TekstiTVWidget.swift */; };
 		4629ADCC332F2935AFC40C83 /* AppNative.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6D21A808CAF26BF96E24C1 /* AppNative.swift */; };
+		55D83CB8C6BF031017531127 /* TekstiTVWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CF3BAEB47A6853CA120D974C /* TekstiTVWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		739F5733AA1A358BD4DBE5D8 /* VT323-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CE5340A7EF2BF675F7D2EC14 /* VT323-Regular.ttf */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		E3439C10FC2EC828B2604EB7 /* AppNative.m in Sources */ = {isa = PBXBuildFile; fileRef = 2E9237225845C13E20310435 /* AppNative.m */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E2B055622F4D4B0073BC61AA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 218E0A578CBADC2C2F3EF5A0;
+			remoteInfo = TekstiTVWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8D14764FED01A85CAD0E55D9 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				55D83CB8C6BF031017531127 /* TekstiTVWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* TekstiTVReactNativeApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TekstiTVReactNativeApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -24,13 +51,19 @@
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = TekstiTVReactNativeApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1D6D21A808CAF26BF96E24C1 /* AppNative.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppNative.swift; path = TekstiTVReactNativeApp/AppNative.swift; sourceTree = SOURCE_ROOT; };
 		2E9237225845C13E20310435 /* AppNative.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = AppNative.m; path = TekstiTVReactNativeApp/AppNative.m; sourceTree = SOURCE_ROOT; };
+		33AD682E4C0839BE1D6A5A87 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-TekstiTVReactNativeApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TekstiTVReactNativeApp.debug.xcconfig"; path = "Target Support Files/Pods-TekstiTVReactNativeApp/Pods-TekstiTVReactNativeApp.debug.xcconfig"; sourceTree = "<group>"; };
+		3C1C3547B69F1CF4209C28B9 /* TekstiTVWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TekstiTVWidget.swift; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-TekstiTVReactNativeApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TekstiTVReactNativeApp.release.xcconfig"; path = "Target Support Files/Pods-TekstiTVReactNativeApp/Pods-TekstiTVReactNativeApp.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-TekstiTVReactNativeApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TekstiTVReactNativeApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		665F39A6220603743BEA6718 /* TekstiTVReactNativeApp.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = TekstiTVReactNativeApp.entitlements; path = TekstiTVReactNativeApp/TekstiTVReactNativeApp.entitlements; sourceTree = SOURCE_ROOT; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = TekstiTVReactNativeApp/AppDelegate.swift; sourceTree = "<group>"; };
+		80EC3ADF6DE6F47E55D8F14D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TekstiTVReactNativeApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CE5340A7EF2BF675F7D2EC14 /* VT323-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "VT323-Regular.ttf"; path = "../assets/fonts/VT323-Regular.ttf"; sourceTree = SOURCE_ROOT; };
+		CF3BAEB47A6853CA120D974C /* TekstiTVWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TekstiTVWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		FD9AB3DC8438D9FCDEFDA178 /* TekstiTVWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = TekstiTVWidget.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +72,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C80B921A6F3F58F76C31292 /* libPods-TekstiTVReactNativeApp.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5BFB20D4D7CC1AE280FB9E95 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2A5F2901524CC096981587ED /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,6 +96,7 @@
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				1D6D21A808CAF26BF96E24C1 /* AppNative.swift */,
 				2E9237225845C13E20310435 /* AppNative.m */,
+				665F39A6220603743BEA6718 /* TekstiTVReactNativeApp.entitlements */,
 			);
 			name = TekstiTVReactNativeApp;
 			sourceTree = "<group>";
@@ -72,6 +114,7 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-TekstiTVReactNativeApp.a */,
+				E6A0FFEFECEEB0B6AD18217F /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -92,6 +135,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
 				1A9B473902FF22615C284B5E /* Fonts */,
+				93628647CE8938FD73F52925 /* TekstiTVWidget */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -102,8 +146,20 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* TekstiTVReactNativeApp.app */,
+				CF3BAEB47A6853CA120D974C /* TekstiTVWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		93628647CE8938FD73F52925 /* TekstiTVWidget */ = {
+			isa = PBXGroup;
+			children = (
+				3C1C3547B69F1CF4209C28B9 /* TekstiTVWidget.swift */,
+				33AD682E4C0839BE1D6A5A87 /* Info.plist */,
+				FD9AB3DC8438D9FCDEFDA178 /* TekstiTVWidget.entitlements */,
+			);
+			name = TekstiTVWidget;
+			path = TekstiTVWidget;
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -113,6 +169,14 @@
 				5709B34CF0A7D63546082F79 /* Pods-TekstiTVReactNativeApp.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		E6A0FFEFECEEB0B6AD18217F /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				80EC3ADF6DE6F47E55D8F14D /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -129,15 +193,34 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				8D14764FED01A85CAD0E55D9 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A43441D1188F032CAF25FFE1 /* PBXTargetDependency */,
 			);
 			name = TekstiTVReactNativeApp;
 			productName = TekstiTVReactNativeApp;
 			productReference = 13B07F961A680F5B00A75B9A /* TekstiTVReactNativeApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		218E0A578CBADC2C2F3EF5A0 /* TekstiTVWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8CF6D44D10D72910CA77B5EE /* Build configuration list for PBXNativeTarget "TekstiTVWidget" */;
+			buildPhases = (
+				F11ED79F157340EC25B6265E /* Sources */,
+				5BFB20D4D7CC1AE280FB9E95 /* Frameworks */,
+				3E07251B6BEF8295E5CD3EFC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TekstiTVWidget;
+			productName = TekstiTVWidget;
+			productReference = CF3BAEB47A6853CA120D974C /* TekstiTVWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -166,6 +249,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* TekstiTVReactNativeApp */,
+				218E0A578CBADC2C2F3EF5A0 /* TekstiTVWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -179,6 +263,13 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				11409643254B478537EC4D85 /* PrivacyInfo.xcprivacy in Resources */,
 				739F5733AA1A358BD4DBE5D8 /* VT323-Regular.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3E07251B6BEF8295E5CD3EFC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,15 +361,61 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F11ED79F157340EC25B6265E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E4F5AE80A792133DC541E82 /* TekstiTVWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		A43441D1188F032CAF25FFE1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TekstiTVWidget;
+			target = 218E0A578CBADC2C2F3EF5A0 /* TekstiTVWidget */;
+			targetProxy = E2B055622F4D4B0073BC61AA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		113E8A78B116A1CCF142258F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = TekstiTVWidget/TekstiTVWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 38;
+				DEVELOPMENT_TEAM = 3GU5CUTF32;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TekstiTVWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Teksti-TV";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.4.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mojotti.teksti-tv-mobile.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-TekstiTVReactNativeApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TekstiTVReactNativeApp/TekstiTVReactNativeApp.entitlements;
 				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 3GU5CUTF32;
 				ENABLE_BITCODE = NO;
@@ -308,6 +445,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TekstiTVReactNativeApp/TekstiTVReactNativeApp.entitlements;
 				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 3GU5CUTF32;
 				INFOPLIST_FILE = TekstiTVReactNativeApp/Info.plist;
@@ -326,6 +464,35 @@
 				PRODUCT_NAME = TekstiTVReactNativeApp;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		4099A1AB223F383587A00C32 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = TekstiTVWidget/TekstiTVWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 38;
+				DEVELOPMENT_TEAM = 3GU5CUTF32;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TekstiTVWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Teksti-TV";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.4.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mojotti.teksti-tv-mobile.widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -492,6 +659,15 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8CF6D44D10D72910CA77B5EE /* Build configuration list for PBXNativeTarget "TekstiTVWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4099A1AB223F383587A00C32 /* Release */,
+				113E8A78B116A1CCF142258F /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -376,7 +376,7 @@ const ThemePicker: React.FC<{
   const { imgSrc } = useContext(PageContext);
   return (
     <View style={styles.tiles}>
-      {(["teletext", "glass", "classic"] as ThemeName[]).map((name) => {
+      {(["teletext", "glass"] as ThemeName[]).map((name) => {
         const t = themes[name];
         const on = value === name;
         return (
@@ -410,7 +410,6 @@ const ThemePicker: React.FC<{
                     backgroundColor: t.glass
                       ? "rgba(255,255,255,0.16)"
                       : t.chrome,
-                    experimental_backgroundImage: t.chromeGradient,
                     borderRadius: t.glass ? 8 : 3,
                   },
                 ]}
@@ -430,41 +429,25 @@ const ThemePicker: React.FC<{
                 />
               )}
               <View style={styles.flex} />
-              {t.layout.classicDock ? (
-                <View style={styles.previewKeys}>
-                  {[0, 1, 2].map((i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.previewKey,
-                        {
-                          borderRadius: 3,
-                          experimental_backgroundImage: t.chipGradient,
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.previewKeys}>
-                  {[tt.red, tt.green, tt.yellow, tt.cyan].map((color) => (
-                    <View
-                      key={color}
-                      style={[
-                        styles.previewKey,
-                        t.glass
-                          ? {
-                              backgroundColor: "rgba(255,255,255,0.14)",
-                              borderBottomWidth: 2,
-                              borderBottomColor: color,
-                              borderRadius: 4,
-                            }
-                          : { backgroundColor: color },
-                      ]}
-                    />
-                  ))}
-                </View>
-              )}
+
+              <View style={styles.previewKeys}>
+                {[tt.red, tt.green, tt.yellow, tt.cyan].map((color) => (
+                  <View
+                    key={color}
+                    style={[
+                      styles.previewKey,
+                      t.glass
+                        ? {
+                            backgroundColor: "rgba(255,255,255,0.14)",
+                            borderBottomWidth: 2,
+                            borderBottomColor: color,
+                            borderRadius: 4,
+                          }
+                        : { backgroundColor: color },
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
             <View style={styles.tileLabel}>
               <View style={[styles.radio, on && styles.radioOn]} />

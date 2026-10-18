@@ -5,7 +5,14 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { BackHandler, LayoutRectangle, StyleSheet, View } from "react-native";
+import {
+  BackHandler,
+  LayoutRectangle,
+  Linking,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { PageContext } from "../providers/page";
@@ -84,6 +91,7 @@ const HomeScreen: React.FC = () => {
   const [feed, setFeed] = useState(false);
   const [fromFeed, setFromFeed] = useState(false);
   const startViewApplied = React.useRef(false);
+  const linkTarget = React.useRef<string>(undefined);
   const [digits, setDigits] = useState("");
   const [pending, setPending] = useState<string>();
   const [notFound, setNotFound] = useState<string>();
@@ -102,11 +110,39 @@ const HomeScreen: React.FC = () => {
     }
   }, [loaded, settings.startView, settings.favorites.length]);
 
+  // tekstitv://page/201 (from the widget) opens that page.
+  useEffect(() => {
+    const open = async (url: string | null) => {
+      const match = url?.match(/^tekstitv:\/\/page\/(\d{3})(?:\/(\d+))?/);
+      if (match && isValidPage(match[1])) {
+        const sub = match[2] ?? "1";
+        linkTarget.current = match[1];
+        setFeed(false);
+        setKeypadOpen(false);
+        setPending(match[1]);
+        await fetchPage(match[1], sub, false, true);
+        if (sub !== "1") {
+          setSubPage(sub);
+        }
+      }
+    };
+    Linking.getInitialURL().then(open);
+    const sub = Linking.addEventListener("url", (e) => open(e.url));
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Refresh whenever the app comes back to the foreground.
   useEffect(() => {
     if (appState === "active") {
       invalidateCache();
-      fetchPage(page, subPage, true, false);
+      // A widget link may have arrived just before; load that page instead.
+      const target = linkTarget.current;
+      if (target && target !== page) {
+        fetchPage(target, "1", true, true);
+      } else {
+        fetchPage(page, subPage, true, false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appState]);
@@ -114,6 +150,9 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     pushHistory(page);
     setPending(undefined);
+    if (linkTarget.current === page) {
+      linkTarget.current = undefined;
+    }
   }, [page, pushHistory]);
 
   useEffect(() => {
@@ -303,9 +342,12 @@ const HomeScreen: React.FC = () => {
 
   const pageArea = (
     <GestureRecognizer onSwipe={onSwipe} style={styles.pageArea}>
-      <View
+      <Pressable
         style={[styles.pageMeasure, isLandscape && styles.centered]}
         onLayout={(e) => setArea(e.nativeEvent.layout)}
+        // The empty space around the page opens the keypad too, as in 2.4.
+        onPress={() => !hasError && setKeypadOpen(true)}
+        accessible={false}
       >
         {hasError ? (
           <ErrorPage
@@ -329,7 +371,7 @@ const HomeScreen: React.FC = () => {
         ) : (
           !hasError && <SubpageRow c={c} />
         )}
-      </View>
+      </Pressable>
     </GestureRecognizer>
   );
 

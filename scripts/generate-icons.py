@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Generate the app icon for iOS and Android from one rectangle-based design.
 
-The icon is a teletext page in miniature: blue header band with a yellow
-title block, cyan rule, black body with three white text bars, green and
-blue bottom bands. Everything is drawn on a 24-unit grid.
+The icon: a yellow "T" built from teletext mosaic blocks on teletext blue,
+a cyan rule, and the four colour keys (red, green, yellow, cyan) on a black
+strip, the same keys the app uses for page and subpage navigation.
+Everything is drawn on a 24-unit grid.
 
 Usage: python3 scripts/generate-icons.py   (run from the repo root)
 """
@@ -21,38 +22,52 @@ YELLOW = (0xFF, 0xE2, 0x3D)
 WHITE = (0xFF, 0xFF, 0xFF)
 BLACK = (0x00, 0x00, 0x00)
 
-# (x, y, w, h, colour) on a 24x24 grid, painted in order.
+RED = (0xFF, 0x3B, 0x3B)
+
+STRIP_TOP = 16.4
+
+
+def _t_blocks(cell=2.7, gap=0.34, top=2.2):
+    """The mosaic "T": 6 x 2 blocks across, a 2 x 3 stem."""
+    out = []
+    x0 = 12 - 3 * cell
+    for r in range(2):
+        for c in range(6):
+            out.append((x0 + c * cell + gap / 2, top + r * cell + gap / 2, cell - gap, cell - gap, YELLOW))
+    for r in range(3):
+        for c in range(2):
+            out.append((12 - cell + c * cell + gap / 2, top + (2 + r) * cell + gap / 2, cell - gap, cell - gap, YELLOW))
+    return out
+
+
+def _keys(y=18.7, h=2.0, x0=3.4, w=3.7, gap=0.8):
+    return [(x0 + i * (w + gap), y, w, h, c) for i, c in enumerate((RED, GREEN, YELLOW, CYAN))]
+
+
+# (x, y, w, h, colour), painted in order.
 BANDS_IOS = [
-    (0, 0, 24, 24, BLACK),
-    (0, 0, 24, 8.4, BLUE),
-    (0, 8.4, 24, 1.1, CYAN),
-    (0, 19.4, 24, 2.6, GREEN),
-    (0, 22, 24, 2, BLUE),
+    (0, 0, 24, 24, BLUE),
+    (0, STRIP_TOP, 24, 24 - STRIP_TOP, BLACK),
+    (0, STRIP_TOP, 24, 0.7, CYAN),
 ]
-MARKS_IOS = [
-    (4, 2.4, 9, 3.6, YELLOW),
-    (4, 11.2, 16, 1.5, WHITE),
-    (4, 14, 13, 1.5, WHITE),
-    (4, 16.8, 9, 1.5, WHITE),
-]
+MARKS_IOS = _t_blocks() + _keys()
 
-# Android adaptive icons: launchers show only the middle 72dp of the 108dp
-# layers (units 4..20 here) and mask it to a circle, squircle etc. Bands are
-# mapped into that visible square and stretched to the edges; the marks are
-# shrunk a bit more so they stay inside the circle mask.
-VISIBLE = 2.0 / 3.0
-MARK_SCALE = 0.6
+# Android adaptive icons: launchers show the middle two-thirds of the
+# layers and mask it to a circle, squircle etc. Everything is scaled
+# towards the centre so the marks stay inside the circle; the bands are
+# then stretched back out to the edges.
+ANDROID_SCALE = 0.62
 
 
-def _band_y(y):
-    return 12 + (y - 12) * VISIBLE
+def _scale_y(y):
+    return 12 + (y - 12) * ANDROID_SCALE
 
 
 def android_bands():
-    out = [(0, 0, 24, 24, BLACK)]
-    for x, y, w, h, c in BANDS_IOS[1:]:
-        top, bottom = _band_y(y), _band_y(y + h)
-        if y == 0:
+    out = []
+    for x, y, w, h, c in BANDS_IOS:
+        top, bottom = _scale_y(y), _scale_y(y + h)
+        if y <= 0:
             top = 0
         if y + h >= 24:
             bottom = 24
@@ -62,7 +77,7 @@ def android_bands():
 
 def android_marks():
     return [
-        (12 + (x - 12) * MARK_SCALE, 12 + (y - 12) * MARK_SCALE, w * MARK_SCALE, h * MARK_SCALE, c)
+        (12 + (x - 12) * ANDROID_SCALE, _scale_y(y), w * ANDROID_SCALE, h * ANDROID_SCALE, c)
         for x, y, w, h, c in MARKS_IOS
     ]
 
@@ -208,8 +223,12 @@ def android():
     for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
         with open(os.path.join(res, "mipmap-anydpi-v26", name), "w") as f:
             f.write(adaptive)
-    # Legacy bitmaps for Android < 8 use the full artwork, square and round.
-    full = BANDS_IOS + MARKS_IOS
+    # Legacy bitmaps for Android < 8: the visible middle of the adaptive
+    # art (units 4..20) scaled up, so they match what launchers show.
+    full = [
+        ((x - 4) * 1.5, (y - 4) * 1.5, w * 1.5, h * 1.5, c)
+        for x, y, w, h, c in android_bands() + marks
+    ]
     for folder, px in (("ldpi", 36), ("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
         d = os.path.join(res, "mipmap-" + folder)
         write_png(os.path.join(d, "ic_launcher.png"), rasterize(full, px))

@@ -10,7 +10,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { tt } from "../../theme/theme";
 
 type Rect = { x: number; y: number; width: number; height: number };
-type TargetId = "pill" | "fastext" | "subpages" | "favorite";
+type TargetId = "pill" | "fastext" | "favorite";
 
 const CoachContext = createContext<{
   rects: Partial<Record<TargetId, Rect>>;
@@ -66,11 +66,6 @@ const STEPS: { target: TargetId; title: string; text: string }[] = [
     target: "fastext",
     title: "Värinäppäimet",
     text: "Punainen ja vihreä vaihtavat sivua, keltainen ja syaani alasivua. Voit myös pyyhkäistä sivua.",
-  },
-  {
-    target: "subpages",
-    title: "Alasivut",
-    text: "Pyyhkäise sivua ylös tai alas selataksesi alasivuja, ja sivuttain vaihtaaksesi sivua.",
   },
   {
     target: "favorite",

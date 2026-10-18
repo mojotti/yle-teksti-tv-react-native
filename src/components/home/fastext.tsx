@@ -105,9 +105,6 @@ export const FastextRow: React.FC<{ c: HomeControls }> = ({ c }) => {
   const theme = useTheme();
   const keys = useKeys(c);
   const coach = useCoachTarget("fastext");
-  if (!theme.layout.fastext) {
-    return null;
-  }
 
   return (
     <View
@@ -164,11 +161,7 @@ export const FastextRow: React.FC<{ c: HomeControls }> = ({ c }) => {
 
 /** Compact colour ticks for landscape. */
 export const FastextTicks: React.FC<{ c: HomeControls }> = ({ c }) => {
-  const theme = useTheme();
   const keys = useKeys(c);
-  if (!theme.layout.fastext) {
-    return null;
-  }
   return (
     <View style={styles.ticks}>
       {keys.map((k) => (
@@ -195,7 +188,7 @@ export const SubpageRow: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
   vertical,
 }) => {
   const theme = useTheme();
-  if (c.subPageCount <= 1 || (!theme.layout.subpageRow && !vertical)) {
+  if (c.subPageCount <= 1) {
     return null;
   }
   const showDots = c.subPageCount <= 8;

@@ -26,6 +26,33 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- tekstitv://page/201 opens a page (used by the widget) -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="tekstitv" android:host="page" />
+        </intent-filter>
+      </activity>
+      <receiver
+        android:name=".PageWidgetProvider"
+        android:label="@string/widget_name"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+            android:name="android.appwidget.provider"
+            android:resource="@xml/page_widget_info" />
+      </receiver>
+      <activity
+        android:name=".PageWidgetConfigActivity"
+        android:label="@string/widget_name"
+        android:theme="@style/WidgetConfigTheme"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { GradientLayer, IconButton } from "../ui";
+import { IconButton } from "../ui";
 import { tt, useTheme } from "../../theme/theme";
 import { HomeControls, favoriteIconName } from "./controls";
 import { useCoachTarget } from "./onboarding";
@@ -22,18 +22,9 @@ export const PagePill: React.FC<{ c: HomeControls; size?: number }> = ({
           styles.pill,
           {
             borderRadius: theme.radius.pill,
-            backgroundColor: theme.layout.classicHeader
-              ? "transparent"
-              : c.pillActive && theme.glass
-                ? theme.accent
-                : theme.surface,
-            borderColor: c.pillActive
-              ? theme.layout.classicHeader
-                ? theme.text
-                : theme.accent
-              : theme.layout.classicHeader
-                ? "transparent"
-                : theme.surfaceBorder,
+            backgroundColor:
+              c.pillActive && theme.glass ? theme.accent : theme.surface,
+            borderColor: c.pillActive ? theme.accent : theme.surfaceBorder,
             opacity: pressed ? 0.7 : 1,
           },
         ]}
@@ -71,58 +62,16 @@ const FavoriteButton: React.FC<{ c: HomeControls }> = ({ c }) => {
   );
 };
 
-/** Subpage counter in the classic header; also a target for the guide. */
-const SubpageCount: React.FC<{ c: HomeControls }> = ({ c }) => {
-  const theme = useTheme();
-  const coach = useCoachTarget("subpages");
-  return (
-    <View ref={coach.ref} onLayout={coach.onLayout} collapsable={false}>
-      <Text style={[theme.number(26), { color: theme.text }]}>
-        {`${c.subPage}/${c.subPageCount}`}
-      </Text>
-    </View>
-  );
-};
-
-/** Right-hand controls: the original refresh/search/count, or share and ⋯. */
-const Trailing: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
-  c,
-  vertical,
-}) => {
-  const theme = useTheme();
-  const share = c.share && (
-    <IconButton name="share-outline" label="Jaa sivu" onPress={c.share} />
-  );
-  if (theme.layout.classicHeader) {
-    return (
-      <>
-        {share}
-        <IconButton
-          name="refresh-outline"
-          label="Päivitä"
-          onPress={c.refresh}
-        />
-        <IconButton
-          name="search-outline"
-          label="Avaa numeronäppäimistö"
-          onPress={c.openKeypad}
-        />
-        {!vertical && <SubpageCount c={c} />}
-      </>
-    );
-  }
-  return (
-    <>
-      <IconButton name="refresh-outline" label="Päivitä" onPress={c.refresh} />
-      {share}
-      <IconButton
-        name="ellipsis-horizontal"
-        label="Lisää"
-        onPress={c.openMenu}
-      />
-    </>
-  );
-};
+/** Right-hand controls: refresh, share and the ⋯ menu. */
+const Trailing: React.FC<{ c: HomeControls }> = ({ c }) => (
+  <>
+    <IconButton name="refresh-outline" label="Päivitä" onPress={c.refresh} />
+    {c.share && (
+      <IconButton name="share-outline" label="Jaa sivu" onPress={c.share} />
+    )}
+    <IconButton name="ellipsis-horizontal" label="Lisää" onPress={c.openMenu} />
+  </>
+);
 
 /** Portrait header: back, home, page pill, favourite … share, menu. */
 export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
@@ -145,7 +94,6 @@ export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
             },
       ]}
     >
-      <GradientLayer gradient={theme.chromeGradient} />
       <View style={styles.header}>
         {c.canGoBack && (
           <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
@@ -186,7 +134,6 @@ export const Rail: React.FC<{ c: HomeControls }> = ({ c }) => {
         },
       ]}
     >
-      <GradientLayer gradient={theme.chromeGradient} />
       {c.canGoBack && (
         <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
       )}
@@ -200,7 +147,7 @@ export const Rail: React.FC<{ c: HomeControls }> = ({ c }) => {
       <FavoriteButton c={c} />
       <View style={styles.grow} />
       <SubpageRow c={c} vertical />
-      <Trailing c={c} vertical />
+      <Trailing c={c} />
     </View>
   );
 };
@@ -278,7 +225,6 @@ export const FeedHeader: React.FC<{
             },
       ]}
     >
-      <GradientLayer gradient={theme.chromeGradient} />
       <View style={styles.header}>
         <IconButton name="home-outline" label="Etusivu" onPress={onHome} />
         <Text style={[theme.number(28), { color: theme.text }]}>Suosikit</Text>

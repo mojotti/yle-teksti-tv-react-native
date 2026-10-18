@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Teksti-TV</string>
+    <string name="widget_name">Teksti-TV-sivu</string>
+    <string name="widget_description">Näyttää valitsemasi Teksti-TV-sivun.</string>
 </resources>

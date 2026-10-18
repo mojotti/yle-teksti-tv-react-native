@@ -1,5 +1,6 @@
 package com.teksti_tv_mobile
 
+import android.content.Intent
 import android.os.Bundle
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -15,7 +16,17 @@ class MainActivity : ReactActivity() {
   override fun getMainComponentName(): String = "TekstiTVReactNativeApp"
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(null);
+    super.onCreate(null)
+  }
+
+  /**
+   * Keep the latest intent (e.g. a widget's tekstitv:// link). React Native
+   * drops onNewIntent while it is still starting; Linking.getInitialURL then
+   * reads this intent instead.
+   */
+  override fun onNewIntent(intent: Intent) {
+    setIntent(intent)
+    super.onNewIntent(intent)
   }
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
