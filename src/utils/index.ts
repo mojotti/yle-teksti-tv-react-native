@@ -188,3 +188,7 @@ export const getPageTitle = (response: TextTvResponse): string => {
   }
   return "";
 };
+
+/** The page on Yle's own Teksti-TV website. */
+export const getPageWebUrl = (page: string) =>
+  `https://yle.fi/aihe/tekstitv?P=${page}`;

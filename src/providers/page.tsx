@@ -38,6 +38,11 @@ interface ContextItem extends PageDetails {
   ) => Promise<PageDetails>;
   /** Loads a page into the cache without showing it. */
   prefetch: (page: string, subPage?: string) => void;
+  /** A page's data, from the cache when fresh; undefined if it can't load. */
+  loadResponse: (
+    page: string,
+    bypassCache?: boolean,
+  ) => Promise<TextTvResponse | undefined>;
   /** Loads a page's metadata (title) and tells whether the page exists. */
   lookupPage: (page: string) => Promise<"ok" | "missing" | "error">;
   invalidateCache: () => void;
@@ -224,6 +229,18 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
       .catch(() => {});
   };
 
+  const loadResponse = async (page: string, bypassCache = false) => {
+    const cached = bypassCache ? undefined : getCached(page, "1");
+    if (cached) {
+      return cached.textTvResponse;
+    }
+    try {
+      return (await load(page, "1")).textTvResponse;
+    } catch {
+      return undefined;
+    }
+  };
+
   const lookupPage = async (page: string) => {
     const cached = getCached(page, "1");
     if (cached) {
@@ -250,6 +267,7 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
         fetchPage,
         prefetch,
         lookupPage,
+        loadResponse,
         invalidateCache,
         error,
         imgSrc,

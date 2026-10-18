@@ -6,6 +6,8 @@ export interface HomeControls {
   pillText: string;
   pillActive: boolean;
   page: string;
+  /** Section title of the page ("ULKOMAAT"), if known. */
+  title?: string;
   subPage: number;
   subPageCount: number;
   prevPage?: string;

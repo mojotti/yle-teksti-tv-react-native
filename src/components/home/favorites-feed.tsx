@@ -1,0 +1,220 @@
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import {
+  FlatList,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { PageContext } from "../../providers/page";
+import { SettingsContext } from "../../providers/settings";
+import { getPageImgSrc, getPageTitle } from "../../utils";
+import { TextTvResponse } from "../../types/response";
+import { tt, useTheme } from "../../theme/theme";
+
+/** Teletext page images are 720 × 432. */
+const IMAGE_RATIO = 432 / 720;
+
+/**
+ * Start view with every favourite page stacked, in the user's order.
+ * Swipe a card sideways for its subpages; tap to open the page.
+ */
+export const FavoritesFeed: React.FC<{
+  onOpen: (page: string, subPage: string) => void;
+}> = ({ onOpen }) => {
+  const theme = useTheme();
+  const { settings } = useContext(SettingsContext);
+  const [width, setWidth] = useState(0);
+  const [stamp, setStamp] = useState(Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refresh = useCallback(() => {
+    setRefreshing(true);
+    setStamp(Date.now());
+    setTimeout(() => setRefreshing(false), 600);
+  }, []);
+
+  if (!settings.favorites.length) {
+    return (
+      <View style={styles.empty}>
+        <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+          Suosikkeja ei vielä ole. Lisää sivu suosikiksi sydämestä, niin se
+          näkyy täällä.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={settings.favorites}
+      keyExtractor={(p) => p}
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      contentContainerStyle={styles.list}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={refresh}
+          tintColor="#fff"
+          colors={[tt.cyan]}
+        />
+      }
+      renderItem={({ item }) =>
+        width ? (
+          <Card
+            page={item}
+            width={width - theme.pageInset * 2}
+            stamp={stamp}
+            onOpen={onOpen}
+          />
+        ) : null
+      }
+    />
+  );
+};
+
+const Card: React.FC<{
+  page: string;
+  width: number;
+  stamp: number;
+  onOpen: (page: string, subPage: string) => void;
+}> = ({ page, width, stamp, onOpen }) => {
+  const theme = useTheme();
+  const { loadResponse } = useContext(PageContext);
+  const [response, setResponse] = useState<TextTvResponse | null>();
+  const [current, setCurrent] = useState(1);
+
+  useEffect(() => {
+    let alive = true;
+    loadResponse(page, true).then((r) => alive && setResponse(r ?? null));
+    return () => {
+      alive = false;
+    };
+    // loadResponse is recreated on every render; reload only on refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, stamp]);
+
+  const count = Number(response?.page.subPageCount || 1);
+  const height = width * IMAGE_RATIO;
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) =>
+    setCurrent(Math.round(e.nativeEvent.contentOffset.x / width) + 1);
+
+  return (
+    <View style={[styles.card, { marginHorizontal: theme.pageInset }]}>
+      <Pressable
+        onPress={() => onOpen(page, String(current))}
+        style={styles.cardHeader}
+        accessibilityRole="button"
+      >
+        <Text
+          style={[
+            theme.number(26),
+            { color: theme.accent === "#ffffff" ? "#fff" : theme.accent },
+          ]}
+        >
+          {page}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={[styles.cardTitle, { color: theme.textMuted }]}
+        >
+          {response ? getPageTitle(response) : ""}
+        </Text>
+        {count > 1 && (
+          <View style={styles.dots}>
+            {Array.from({ length: Math.min(count, 8) }, (_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  { backgroundColor: i + 1 === current ? "#fff" : "#3a3e46" },
+                ]}
+              />
+            ))}
+          </View>
+        )}
+      </Pressable>
+      {response === null ? (
+        <View style={[styles.missing, { width, height }]}>
+          <Text
+            style={[theme.number(24), { color: tt.red }]}
+          >{`Sivua ${page} ei saatu`}</Text>
+        </View>
+      ) : (
+        <FlatList
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          data={Array.from({ length: count }, (_, i) => String(i + 1))}
+          keyExtractor={(n) => n}
+          onMomentumScrollEnd={onScroll}
+          style={{ width, height, borderRadius: theme.radius.page }}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => onOpen(page, item)}
+              accessibilityLabel={`Avaa sivu ${page}, alasivu ${item}`}
+            >
+              <Image
+                source={{
+                  uri: `${getPageImgSrc(page, item)}&cacheValid=${stamp}`,
+                }}
+                resizeMode="stretch"
+                style={{ width, height }}
+              />
+            </Pressable>
+          )}
+        />
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  list: {
+    paddingBottom: 16,
+    gap: 14,
+  },
+  card: {
+    gap: 4,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 8,
+    paddingTop: 6,
+  },
+  cardTitle: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  dots: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  missing: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000",
+  },
+  empty: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 32,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 15,
+    lineHeight: 21,
+  },
+});

@@ -80,6 +80,20 @@ export const SettingsScreen: React.FC = () => {
               onChange={set("favoritesReplaceLinks")}
             />
           </Row>
+          <Row
+            label="Aloitusnäkymä"
+            detail="Mitä sovellus näyttää avautuessaan"
+            disabled={!settings.favorites.length}
+          >
+            <Segmented
+              value={settings.startView}
+              onChange={set("startView")}
+              options={[
+                { value: "front", label: "Etusivu" },
+                { value: "favorites", label: "Suosikit" },
+              ]}
+            />
+          </Row>
           <Row label="Suosikkikuvake" detail="Alapalkin suosikeissa">
             <Segmented
               value={settings.favoriteIcon}
@@ -250,7 +264,7 @@ const Favorites: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
           </Text>
           <Text
             style={[styles.favName, { color: theme.textMuted }]}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {pageNames[page] ?? ""}
           </Text>
@@ -488,11 +502,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingLeft: 14,
     paddingRight: 4,
+    paddingVertical: 4,
     minHeight: 48,
   },
   favName: {
     flex: 1,
     fontSize: 14,
+    lineHeight: 18,
+    paddingRight: 4,
   },
   tiles: {
     flexDirection: "row",

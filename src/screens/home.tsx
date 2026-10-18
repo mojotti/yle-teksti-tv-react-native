@@ -13,7 +13,12 @@ import { NavigationStatusContext } from "../providers/navigation-status";
 import { AppStateContext } from "../providers/app-state";
 import { MAX_FAVORITES, SettingsContext } from "../providers/settings";
 import { OrientationTypes, WindowContext } from "../providers/window";
-import { getNewSubPage, getPageSize, isValidPage } from "../utils";
+import {
+  getNewSubPage,
+  getPageSize,
+  getPageTitle,
+  isValidPage,
+} from "../utils";
 import { useTheme } from "../theme/theme";
 import type { HomeScreenNavigationProp } from "../../App";
 
@@ -31,6 +36,9 @@ import {
 import { Dock, DockColumn } from "../components/home/dock";
 import { PageView } from "../components/home/page-view";
 import { Keypad } from "../components/home/keypad";
+import { ShareSheet } from "../components/home/share-sheet";
+import { FavoritesFeed } from "../components/home/favorites-feed";
+import { FeedHeader } from "../components/home/header";
 import { CoachProvider, Onboarding } from "../components/home/onboarding";
 import {
   Ambient,
@@ -69,6 +77,11 @@ const HomeScreen: React.FC = () => {
 
   const [keypadOpen, setKeypadOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  // Favourites feed as the start view (setting), or opened from the menu.
+  const [feed, setFeed] = useState(false);
+  const [fromFeed, setFromFeed] = useState(false);
+  const startViewApplied = React.useRef(false);
   const [digits, setDigits] = useState("");
   const [pending, setPending] = useState<string>();
   const [notFound, setNotFound] = useState<string>();
@@ -77,6 +90,15 @@ const HomeScreen: React.FC = () => {
   const isLoading = nav.isLoadingImg || nav.isLoadingPageData;
   const showLoading = useDelayed(isLoading);
   const hasError = !!error && error.code !== 404;
+
+  useEffect(() => {
+    if (loaded && !startViewApplied.current) {
+      startViewApplied.current = true;
+      if (settings.startView === "favorites" && settings.favorites.length) {
+        setFeed(true);
+      }
+    }
+  }, [loaded, settings.startView, settings.favorites.length]);
 
   // Refresh whenever the app comes back to the foreground.
   useEffect(() => {
@@ -130,8 +152,11 @@ const HomeScreen: React.FC = () => {
     [fetchPage],
   );
 
-  const canGoBack = history.length > 1;
+  const canGoBack = history.length > 1 || fromFeed;
   const goBack = useCallback(() => {
+    if (feed) {
+      return false;
+    }
     const previous = popHistory();
     if (previous) {
       // The page effect pushes it again once it has loaded.
@@ -139,8 +164,20 @@ const HomeScreen: React.FC = () => {
       goTo(previous);
       return true;
     }
+    if (fromFeed) {
+      setFeed(true);
+      return true;
+    }
     return false;
-  }, [popHistory, goTo]);
+  }, [popHistory, goTo, feed, fromFeed]);
+
+  const openFromFeed = async (target: string, sub: string) => {
+    setFeed(false);
+    setFromFeed(true);
+    setPending(target);
+    await fetchPage(target, sub, false, true);
+    setSubPage(sub);
+  };
 
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () =>
@@ -167,6 +204,10 @@ const HomeScreen: React.FC = () => {
     pillText: keypadOpen ? (digits + "___").slice(0, 3) : (pending ?? page),
     pillActive: keypadOpen,
     page,
+    title:
+      textTvResponse && !pending && !keypadOpen
+        ? getPageTitle(textTvResponse)
+        : undefined,
     subPage: Number(subPage),
     subPageCount,
     prevPage,
@@ -194,6 +235,7 @@ const HomeScreen: React.FC = () => {
             : settings.favorites,
       }),
     openMenu: () => setMenuOpen(true),
+    share: textTvResponse && !hasError ? () => setShareOpen(true) : undefined,
     refresh: () => fetchPage(page, subPage, true),
   };
 
@@ -236,6 +278,15 @@ const HomeScreen: React.FC = () => {
   }, [area, isLandscape, subPageCount, settings.screenRatio, theme.pageInset]);
 
   const menuItems = [
+    ...(settings.favorites.length
+      ? [
+          {
+            label: "Suosikit",
+            icon: "albums-outline",
+            onPress: () => setFeed(true),
+          },
+        ]
+      : []),
     {
       label: "Asetukset",
       icon: "settings-outline",
@@ -285,12 +336,14 @@ const HomeScreen: React.FC = () => {
     !settings.onboardingDone &&
     !keypadOpen &&
     !menuOpen &&
+    !shareOpen &&
+    !feed &&
     !!textTvResponse;
 
   return (
     <View style={[styles.root, { backgroundColor: theme.bg }]}>
       {theme.glass && settings.ambientGlow && <Ambient src={imgSrc} />}
-      {isLandscape ? (
+      {isLandscape && !feed ? (
         <View style={styles.row}>
           <Rail c={c} />
           <View style={styles.flex}>
@@ -305,15 +358,31 @@ const HomeScreen: React.FC = () => {
         </View>
       ) : (
         <>
-          <Header c={c} />
-          <ProgressLine active={showLoading} />
-          <NotFoundBand
-            page={notFound}
-            onClose={() => setNotFound(undefined)}
-          />
-          {pageArea}
-          <FastextRow c={c} />
-          {settings.showDock && <Dock onPageChange={goTo} />}
+          {feed ? (
+            <>
+              <FeedHeader
+                onHome={() => {
+                  setFeed(false);
+                  goTo("100");
+                }}
+                onKeypad={() => setKeypadOpen(true)}
+                onMenu={() => setMenuOpen(true)}
+              />
+              <FavoritesFeed onOpen={openFromFeed} />
+            </>
+          ) : (
+            <>
+              <Header c={c} />
+              <ProgressLine active={showLoading} />
+              <NotFoundBand
+                page={notFound}
+                onClose={() => setNotFound(undefined)}
+              />
+              {pageArea}
+              <FastextRow c={c} />
+              {settings.showDock && <Dock onPageChange={goTo} />}
+            </>
+          )}
         </>
       )}
       <Keypad
@@ -321,8 +390,17 @@ const HomeScreen: React.FC = () => {
         recent={history.filter((p) => p !== page)}
         favorites={settings.favorites}
         onDigits={setDigits}
-        onSubmit={goTo}
+        onSubmit={(p) => {
+          setFeed(false);
+          goTo(p);
+        }}
         onClose={() => setKeypadOpen(false)}
+      />
+      <ShareSheet
+        visible={shareOpen}
+        page={page}
+        subPage={subPage}
+        onClose={() => setShareOpen(false)}
       />
       <MoreMenu
         visible={menuOpen}

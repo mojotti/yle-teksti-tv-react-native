@@ -130,7 +130,7 @@ export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
   return (
     <View
       style={[
-        styles.header,
+        styles.headerBox,
         theme.glass
           ? [
               styles.glassHeader,
@@ -146,19 +146,29 @@ export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
       ]}
     >
       <GradientLayer gradient={theme.chromeGradient} />
-      {c.canGoBack && (
-        <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
-      )}
-      <IconButton
-        name="home-outline"
-        label="Etusivu"
-        onPress={c.goHome}
-        disabled={c.page === "100"}
-      />
-      <PagePill c={c} />
-      <FavoriteButton c={c} />
-      <View style={styles.grow} />
-      <Trailing c={c} />
+      <View style={styles.header}>
+        {c.canGoBack && (
+          <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
+        )}
+        <IconButton
+          name="home-outline"
+          label="Etusivu"
+          onPress={c.goHome}
+          disabled={c.page === "100"}
+        />
+        <PagePill c={c} />
+        <FavoriteButton c={c} />
+        <View style={styles.grow} />
+        <Trailing c={c} />
+      </View>
+      {/* Titles can be long ("DIGI-TV- JA TEKSTI-TV-TIETOA"), so they get a row. */}
+      {/* Always present, so the page doesn't jump between pages. */}
+      <Text
+        numberOfLines={2}
+        style={[styles.title, { color: theme.textMuted }]}
+      >
+        {c.title || " "}
+      </Text>
     </View>
   );
 };
@@ -196,19 +206,20 @@ export const Rail: React.FC<{ c: HomeControls }> = ({ c }) => {
 };
 
 const styles = StyleSheet.create({
+  headerBox: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   header: {
     height: 52,
     flexDirection: "row",
     alignItems: "center",
     gap: 2,
     paddingHorizontal: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   glassHeader: {
     marginHorizontal: 8,
     marginTop: 4,
     marginBottom: 8,
-    height: 48,
     borderRadius: 24,
     borderWidth: 1,
   },
@@ -225,6 +236,14 @@ const styles = StyleSheet.create({
   grow: {
     flex: 1,
   },
+  title: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    paddingHorizontal: 14,
+    marginTop: -6,
+    paddingBottom: 7,
+  },
   rail: {
     width: 72,
     alignItems: "center",
@@ -233,3 +252,44 @@ const styles = StyleSheet.create({
     borderRightWidth: StyleSheet.hairlineWidth,
   },
 });
+
+/** Header for the favourites feed. */
+export const FeedHeader: React.FC<{
+  onHome: () => void;
+  onKeypad: () => void;
+  onMenu: () => void;
+}> = ({ onHome, onKeypad, onMenu }) => {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.headerBox,
+        theme.glass
+          ? [
+              styles.glassHeader,
+              {
+                backgroundColor: theme.chrome,
+                borderColor: theme.chromeBorder,
+              },
+            ]
+          : {
+              backgroundColor: theme.chrome,
+              borderBottomColor: theme.chromeBorder,
+            },
+      ]}
+    >
+      <GradientLayer gradient={theme.chromeGradient} />
+      <View style={styles.header}>
+        <IconButton name="home-outline" label="Etusivu" onPress={onHome} />
+        <Text style={[theme.number(28), { color: theme.text }]}>Suosikit</Text>
+        <View style={styles.grow} />
+        <IconButton
+          name="keypad-outline"
+          label="Avaa numeronäppäimistö"
+          onPress={onKeypad}
+        />
+        <IconButton name="ellipsis-horizontal" label="Lisää" onPress={onMenu} />
+      </View>
+    </View>
+  );
+};
