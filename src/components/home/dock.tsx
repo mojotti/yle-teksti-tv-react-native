@@ -73,12 +73,15 @@ const SectionLabel: React.FC<{ section: Section }> = ({ section }) => {
   );
 };
 
-export const Dock: React.FC<{ onPageChange: (page: string) => void }> = ({
-  onPageChange,
-}) => {
+export const Dock: React.FC<{
+  onPageChange: (page: string) => void;
+  /** The page on screen (a failed page, rather than the last loaded one). */
+  current?: string;
+}> = ({ onPageChange, current }) => {
   const theme = useTheme();
   const sections = useSections();
-  const { page } = useContext(NavigationStatusContext);
+  const { page: loadedPage } = useContext(NavigationStatusContext);
+  const page = current ?? loadedPage;
 
   return (
     <View
@@ -165,12 +168,15 @@ const ChipScroller: React.FC<{
 };
 
 /** Landscape: the same sections as a vertical column on the right. */
-export const DockColumn: React.FC<{ onPageChange: (page: string) => void }> = ({
-  onPageChange,
-}) => {
+export const DockColumn: React.FC<{
+  onPageChange: (page: string) => void;
+  /** The page on screen (a failed page, rather than the last loaded one). */
+  current?: string;
+}> = ({ onPageChange, current }) => {
   const theme = useTheme();
   const sections = useSections();
-  const { page } = useContext(NavigationStatusContext);
+  const { page: loadedPage } = useContext(NavigationStatusContext);
+  const page = current ?? loadedPage;
 
   return (
     <ScrollView

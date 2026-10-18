@@ -236,6 +236,12 @@ const HomeScreen: React.FC = () => {
     if (feed) {
       return false;
     }
+    // A page that failed to load never entered the history; back returns
+    // to the page that was showing before it.
+    if (error && error.code !== 404 && error.page !== page) {
+      goTo(page);
+      return true;
+    }
     const previous = popHistory();
     if (previous) {
       // The page effect pushes it again once it has loaded.
@@ -248,7 +254,7 @@ const HomeScreen: React.FC = () => {
       return true;
     }
     return false;
-  }, [popHistory, goTo, feed, fromFeed]);
+  }, [popHistory, goTo, feed, fromFeed, error, page]);
 
   // Leaving the feed for a page: back from there returns to the feed, not to
   // pages seen before it (such as page 100, loaded behind the feed).
@@ -448,7 +454,9 @@ const HomeScreen: React.FC = () => {
             />
             {pageArea}
           </View>
-          {loaded && settings.showDock && <DockColumn onPageChange={goTo} />}
+          {loaded && settings.showDock && (
+            <DockColumn onPageChange={goTo} current={model.page} />
+          )}
         </View>
       ) : (
         <React.Fragment key={settings.theme}>
@@ -478,7 +486,9 @@ const HomeScreen: React.FC = () => {
               />
               {pageArea}
               <FastextRow c={c} />
-              {loaded && settings.showDock && <Dock onPageChange={goTo} />}
+              {loaded && settings.showDock && (
+                <Dock onPageChange={goTo} current={model.page} />
+              )}
             </>
           )}
         </React.Fragment>
