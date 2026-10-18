@@ -132,7 +132,7 @@ export const ShareSheet: React.FC<{
     setMessage(undefined);
     try {
       await action();
-    } catch (e) {
+    } catch {
       setMessage("Toiminto epäonnistui. Yritä uudelleen.");
     } finally {
       setBusy(false);
