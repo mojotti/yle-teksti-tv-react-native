@@ -157,7 +157,7 @@ def sample(img, sx, sy):
 
 
 CURVE = 0.07     # how much the tube face bulges
-FRINGE = 0.0035  # red/blue beam misalignment, in window units
+FRINGE = 0.0016  # red/blue beam misalignment, in window units
 
 
 def render(scene, px, view=(0.0, 1.0), ss=3):
@@ -226,12 +226,12 @@ def render(scene, px, view=(0.0, 1.0), ss=3):
     front = front + (255 - front) * smooth(0.55, 0.95, core)[..., None] * 0.55
     # Scanlines (fewer on small icons so they never shimmer), aperture grille when big.
     lines = min(112, wpx / 4.5)
-    amp = 0.26 * smooth(18, 40, lines)
+    amp = 0.20 * smooth(30, 90, lines)
     scan = 1 - amp * (np.cos(V * lines * 2 * np.pi) * 0.5 + 0.5) ** 2
     texture = scan[..., None]
     if wpx >= 512:
         col = np.arange(px)[None, :] // 2
-        grille = np.stack([0.91 + 0.27 * ((col + c) % 3 == 0) for c in range(3)], -1)
+        grille = np.stack([0.96 + 0.12 * ((col + c) % 3 == 0) for c in range(3)], -1)
         texture = texture * grille
     back = back * texture
     front = front * texture

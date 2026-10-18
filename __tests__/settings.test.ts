@@ -27,7 +27,7 @@ describe("loadSettings", () => {
     expect(s.pageLinks).toBe(true);
     expect(s.showSubpageRow).toBe(false);
     expect(s.dockContent).toBe("favorites");
-    expect(s.version).toBe(3);
+    expect(s.version).toBe(4);
     expect("favoritesReplaceLinks" in s).toBe(false);
   });
 
@@ -41,10 +41,23 @@ describe("loadSettings", () => {
     expect(s.showSubpageRow).toBe(true);
   });
 
-  it("keeps choices made after version 3", async () => {
+  it("drops the default heart icon for redesign-era settings", async () => {
     await AsyncStorage.setItem(
       "@settings",
-      JSON.stringify({ version: 3, pageLinks: false, showSubpageRow: true }),
+      JSON.stringify({ version: 3, favoriteIcon: "heart" }),
+    );
+    expect((await loadSettings()).favoriteIcon).toBe("none");
+  });
+
+  it("keeps the star a 2.4 user picked", async () => {
+    await AsyncStorage.setItem("@favoriteIcon", "star");
+    expect((await loadSettings()).favoriteIcon).toBe("star");
+  });
+
+  it("keeps choices made after version 4", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 4, pageLinks: false, showSubpageRow: true }),
     );
     const s = await loadSettings();
     expect(s.pageLinks).toBe(false);

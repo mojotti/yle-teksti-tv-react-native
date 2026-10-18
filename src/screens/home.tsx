@@ -42,7 +42,7 @@ import {
   SubpageRow,
 } from "../components/home/fastext";
 import { Dock, DockColumn } from "../components/home/dock";
-import { PageView } from "../components/home/page-view";
+import { PageView, SlideFrom } from "../components/home/page-view";
 import { Keypad } from "../components/home/keypad";
 import { ShareSheet } from "../components/home/share-sheet";
 import { FavoritesFeed } from "../components/home/favorites-feed";
@@ -95,6 +95,8 @@ const HomeScreen: React.FC = () => {
   const isLandscape = orientation === OrientationTypes.Landscape;
 
   const [keypadOpen, setKeypadOpen] = useState(false);
+  // Last swipe, so the page view can slide the next page in.
+  const [slide, setSlide] = useState<{ from: SlideFrom; at: number }>();
   // Keypad for adding a favourite from the favourites feed.
   const [addingFavorite, setAddingFavorite] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -335,6 +337,14 @@ const HomeScreen: React.FC = () => {
     if (keypadOpen) {
       return;
     }
+    // The next page slides in from the side the finger moved away from.
+    const from: Record<SwipeDirections, SlideFrom> = {
+      SWIPE_LEFT: "right",
+      SWIPE_RIGHT: "left",
+      SWIPE_UP: "bottom",
+      SWIPE_DOWN: "top",
+    };
+    setSlide({ from: from[direction], at: Date.now() });
     const vertical = settings.swipe === "pagesVertical";
     const actions: Record<SwipeDirections, () => void> = vertical
       ? {
@@ -424,6 +434,7 @@ const HomeScreen: React.FC = () => {
             dimmed={showLoading || keypadOpen}
             onLinkPress={goTo}
             onPress={() => setKeypadOpen(true)}
+            slide={slide}
           />
         )}
         {isLandscape ? <FastextTicks c={c} /> : <SubpageRow c={c} />}

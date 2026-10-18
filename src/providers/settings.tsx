@@ -45,7 +45,7 @@ export const MAX_FAVORITES = 20;
 
 export const defaultSettings: Settings = {
   favorites: [],
-  favoriteIcon: "heart",
+  favoriteIcon: "none",
   dockContent: "both",
   startView: "front",
   theme: "glass",
@@ -59,13 +59,14 @@ export const defaultSettings: Settings = {
   orientationLock: "auto",
   offlineAutoDownload: false,
   onboardingDone: false,
-  version: 3,
+  version: 4,
 };
 
 /**
  * Brings stored settings up to date. Version 2: the subpage row is off by
  * default and "favoritesReplaceLinks" became dockContent. Version 3:
  * page-number links are on again (version 2 had briefly turned them off).
+ * Version 4: favourite chips have no icon by default.
  */
 export const migrate = (stored: Record<string, unknown>): Settings => {
   const s = { ...defaultSettings, ...stored } as Settings & {
@@ -78,6 +79,11 @@ export const migrate = (stored: Record<string, unknown>): Settings => {
   }
   if (version < 3) {
     s.pageLinks = true;
+  }
+  // Version 4: no icon on favourite chips by default. The heart was only
+  // ever stored as the old default in redesign builds.
+  if (version < 4 && s.favoriteIcon === "heart") {
+    s.favoriteIcon = "none";
   }
   s.version = defaultSettings.version;
   delete s.favoritesReplaceLinks;
