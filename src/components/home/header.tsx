@@ -1,0 +1,235 @@
+import React from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { GradientLayer, IconButton } from "../ui";
+import { tt, useTheme } from "../../theme/theme";
+import { HomeControls, favoriteIconName } from "./controls";
+import { useCoachTarget } from "./onboarding";
+import { SubpageRow } from "./fastext";
+
+export const PagePill: React.FC<{ c: HomeControls; size?: number }> = ({
+  c,
+  size = 30,
+}) => {
+  const theme = useTheme();
+  const coach = useCoachTarget("pill");
+  return (
+    <View ref={coach.ref} onLayout={coach.onLayout} collapsable={false}>
+      <Pressable
+        onPress={c.openKeypad}
+        accessibilityRole="button"
+        accessibilityLabel={`Sivu ${c.page}. Avaa numeronäppäimistö.`}
+        style={({ pressed }) => [
+          styles.pill,
+          {
+            borderRadius: theme.radius.pill,
+            backgroundColor: theme.layout.classicHeader
+              ? "transparent"
+              : c.pillActive && theme.glass
+                ? theme.accent
+                : theme.surface,
+            borderColor: c.pillActive
+              ? theme.layout.classicHeader
+                ? theme.text
+                : theme.accent
+              : theme.layout.classicHeader
+                ? "transparent"
+                : theme.surfaceBorder,
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            theme.number(size),
+            styles.pillText,
+            {
+              color: c.pillActive && theme.glass ? theme.onAccent : theme.text,
+            },
+          ]}
+        >
+          {c.pillText}
+        </Text>
+      </Pressable>
+    </View>
+  );
+};
+
+const FavoriteButton: React.FC<{ c: HomeControls }> = ({ c }) => {
+  const theme = useTheme();
+  const coach = useCoachTarget("favorite");
+  return (
+    <View ref={coach.ref} onLayout={coach.onLayout} collapsable={false}>
+      <IconButton
+        name={favoriteIconName(c.favoriteIcon, c.isFavorite)}
+        color={
+          c.isFavorite ? (theme.glass ? "#ff6b7a" : tt.red) : theme.textMuted
+        }
+        label={c.isFavorite ? "Poista suosikeista" : "Lisää suosikkeihin"}
+        onPress={c.toggleFavorite}
+      />
+    </View>
+  );
+};
+
+/** Subpage counter in the classic header; also a target for the guide. */
+const SubpageCount: React.FC<{ c: HomeControls }> = ({ c }) => {
+  const theme = useTheme();
+  const coach = useCoachTarget("subpages");
+  return (
+    <View ref={coach.ref} onLayout={coach.onLayout} collapsable={false}>
+      <Text style={[theme.number(26), { color: theme.text }]}>
+        {`${c.subPage}/${c.subPageCount}`}
+      </Text>
+    </View>
+  );
+};
+
+/** Right-hand controls: the original refresh/search/count, or share and ⋯. */
+const Trailing: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
+  c,
+  vertical,
+}) => {
+  const theme = useTheme();
+  const share = c.share && (
+    <IconButton name="share-outline" label="Jaa sivu" onPress={c.share} />
+  );
+  if (theme.layout.classicHeader) {
+    return (
+      <>
+        {share}
+        <IconButton
+          name="refresh-outline"
+          label="Päivitä"
+          onPress={c.refresh}
+        />
+        <IconButton
+          name="search-outline"
+          label="Avaa numeronäppäimistö"
+          onPress={c.openKeypad}
+        />
+        {!vertical && <SubpageCount c={c} />}
+      </>
+    );
+  }
+  return (
+    <>
+      <IconButton name="refresh-outline" label="Päivitä" onPress={c.refresh} />
+      {share}
+      <IconButton
+        name="ellipsis-horizontal"
+        label="Lisää"
+        onPress={c.openMenu}
+      />
+    </>
+  );
+};
+
+/** Portrait header: back, home, page pill, favourite … share, menu. */
+export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.header,
+        theme.glass
+          ? [
+              styles.glassHeader,
+              {
+                backgroundColor: theme.chrome,
+                borderColor: theme.chromeBorder,
+              },
+            ]
+          : {
+              backgroundColor: theme.chrome,
+              borderBottomColor: theme.chromeBorder,
+            },
+      ]}
+    >
+      <GradientLayer gradient={theme.chromeGradient} />
+      {c.canGoBack && (
+        <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
+      )}
+      <IconButton
+        name="home-outline"
+        label="Etusivu"
+        onPress={c.goHome}
+        disabled={c.page === "100"}
+      />
+      <PagePill c={c} />
+      <FavoriteButton c={c} />
+      <View style={styles.grow} />
+      <Trailing c={c} />
+    </View>
+  );
+};
+
+/** Landscape left rail with the same controls stacked vertically. */
+export const Rail: React.FC<{ c: HomeControls }> = ({ c }) => {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.rail,
+        {
+          backgroundColor: theme.glass ? "transparent" : theme.chrome,
+          borderRightColor: theme.chromeBorder,
+        },
+      ]}
+    >
+      <GradientLayer gradient={theme.chromeGradient} />
+      {c.canGoBack && (
+        <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
+      )}
+      <IconButton
+        name="home-outline"
+        label="Etusivu"
+        onPress={c.goHome}
+        disabled={c.page === "100"}
+      />
+      <PagePill c={c} size={26} />
+      <FavoriteButton c={c} />
+      <View style={styles.grow} />
+      <SubpageRow c={c} vertical />
+      <Trailing c={c} vertical />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  header: {
+    height: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  glassHeader: {
+    marginHorizontal: 8,
+    marginTop: 4,
+    marginBottom: 8,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  pill: {
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingTop: 2,
+    minWidth: 64,
+    alignItems: "center",
+  },
+  pillText: {
+    letterSpacing: 1,
+  },
+  grow: {
+    flex: 1,
+  },
+  rail: {
+    width: 72,
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 6,
+    borderRightWidth: StyleSheet.hairlineWidth,
+  },
+});

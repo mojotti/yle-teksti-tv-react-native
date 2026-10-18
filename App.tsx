@@ -1,34 +1,30 @@
 import "react-native-gesture-handler";
 import React, { FC } from "react";
-import { PageHandler } from "./src/components/page-handler";
-import { PageProvider } from "./src/providers/page";
-import { DarkTheme, NavigationContainer } from "@react-navigation/native";
-import { Settings } from "./src/components/settings";
-import { SettingsProvider } from "./src/providers/settings";
-import { AppStateProvider } from "./src/providers/app-state";
-import { NavigationStatusProvider } from "./src/providers/navigation-status";
-import { DeveloperPage } from "./src/components/developer-page";
-import { WindowProvider } from "./src/providers/window";
 import { StatusBar, View } from "react-native";
+import { DarkTheme, NavigationContainer } from "@react-navigation/native";
 import {
   createStackNavigator,
   StackNavigationProp,
 } from "@react-navigation/stack";
-import { iconSizeLarge, pageInfoHeight } from "./src/utils/constants";
-import _IonIcon from "@react-native-vector-icons/ionicons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   SafeAreaProvider,
-  SafeAreaInsetsContext,
+  useSafeAreaInsets,
 } from "react-native-safe-area-context";
+
+import { PageProvider } from "./src/providers/page";
+import { SettingsProvider } from "./src/providers/settings";
+import { AppStateProvider } from "./src/providers/app-state";
+import { NavigationStatusProvider } from "./src/providers/navigation-status";
+import { WindowProvider } from "./src/providers/window";
 import { hasValidEnvVariables } from "./src/utils";
 import { ConfigErrorScreen } from "./src/components/config-error-screen";
 import { SettingsHeader } from "./src/components/settings-header";
-
-const Icon = _IonIcon as React.ElementType;
+import { Home } from "./src/screens/home";
+import { SettingsScreen } from "./src/screens/settings";
+import { useTheme } from "./src/theme/theme";
 
 const App: FC = () => {
-  // Check environment variables before rendering the app
   if (!hasValidEnvVariables()) {
     return (
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#000000" }}>
@@ -40,7 +36,7 @@ const App: FC = () => {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#000000" }}>
       <SafeAreaProvider>
         <AppStateProvider>
           <WindowProvider>
@@ -64,9 +60,7 @@ export default App;
 
 export type RootStackParamList = {
   Home: undefined;
-  Information: undefined;
   Settings: undefined;
-  Development?: undefined;
 };
 
 export type HomeScreenNavigationProp = StackNavigationProp<
@@ -74,57 +68,46 @@ export type HomeScreenNavigationProp = StackNavigationProp<
   "Home"
 >;
 
+const Stack = createStackNavigator<RootStackParamList>();
+
 const Navigator: FC = () => {
-  const Stack = createStackNavigator();
+  const insets = useSafeAreaInsets();
+  const theme = useTheme();
 
   return (
-    <SafeAreaInsetsContext.Consumer>
-      {(insets) => (
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "black",
-            paddingTop: insets?.top || 0,
-            paddingBottom: insets?.bottom || 0,
-            paddingLeft: insets?.left || 0,
-            paddingRight: insets?.right || 0,
-          }}>
-          <StatusBar barStyle={"light-content"} backgroundColor="#000000" />
-          <Stack.Navigator initialRouteName="Home" detachInactiveScreens>
-            <Stack.Screen
-              name="Home"
-              component={PageHandler}
-              options={{
-                title: "Teksti-TV",
-                headerShown: false,
-              }}
-            />
-            <Stack.Screen
-              name="Settings"
-              component={Settings}
-              options={{
-                headerShown: true,
-                header: ({ navigation }) => (
-                  <SettingsHeader
-                    title="Asetukset"
-                    onBack={() => navigation.goBack()}
-                  />
-                ),
-              }}
-            />
-            {__DEV__ && (
-              <Stack.Screen
-                name="Development"
-                component={DeveloperPage}
-                options={{
-                  title: "Kehittäjäsivu",
-                  headerShown: true,
-                }}
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.bg,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{ cardStyle: { backgroundColor: theme.bg } }}
+      >
+        <Stack.Screen
+          name="Home"
+          component={Home}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            header: ({ navigation }) => (
+              <SettingsHeader
+                title="Asetukset"
+                onBack={() => navigation.goBack()}
               />
-            )}
-          </Stack.Navigator>
-        </View>
-      )}
-    </SafeAreaInsetsContext.Consumer>
+            ),
+          }}
+        />
+      </Stack.Navigator>
+    </View>
   );
 };

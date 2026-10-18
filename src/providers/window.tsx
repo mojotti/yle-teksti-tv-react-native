@@ -44,7 +44,8 @@ export const WindowProvider: FunctionComponent<PropsWithChildren> = (props) => {
         orientation,
         deviceScreen: Dimensions.get("screen"),
         applicationWindow,
-      }}>
+      }}
+    >
       {props.children}
     </WindowContext.Provider>
   );

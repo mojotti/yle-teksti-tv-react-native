@@ -15,7 +15,7 @@ export const isValidPage = (input: string) => {
 };
 
 export const hasValidEnvVariables = (): boolean => {
-  return !!(APP_ID && APP_KEY && APP_ID.trim() !== '' && APP_KEY.trim() !== '');
+  return !!(APP_ID && APP_KEY && APP_ID.trim() !== "" && APP_KEY.trim() !== "");
 };
 
 export const getPageImgSrc = (page: string, subPage = "1") => {
@@ -127,30 +127,64 @@ export const getLinkPages = (
   return linksToShow.length === 1 ? defaultLinks : linksToShow;
 };
 
-export const getScreenHeight = (
+/** Page height as a share of its width, per portrait size preset. */
+export const ratioHeights: Record<Exclude<ScreenRatio, "full">, number> = {
+  tv: 3 / 4,
+  square: 1,
+  tall: 4 / 3,
+};
+
+/**
+ * Size of the teletext page inside the space available for it. Portrait
+ * uses the full width and the chosen preset's height; landscape keeps the
+ * TV 4:3 shape so letters are never stretched.
+ */
+export const getPageSize = (
   ratio: ScreenRatio,
-  viewHeight: number,
-  width: number,
+  availableWidth: number,
+  availableHeight: number,
   isLandscape: boolean,
-): number => {
-  if (isLandscape || ratio === "full") {
-    return viewHeight;
+): { width: number; height: number } => {
+  if (availableWidth <= 0 || availableHeight <= 0) {
+    return { width: 0, height: 0 };
   }
 
-  const ratioMultipliers: Record<string, number> = {
-    goldenRatio: 1.618033,
-    "16:9": 16 / 9,
-    "4:3": 4 / 3,
-    "3:2": 3 / 2,
-    "1:1": 1,
+  if (isLandscape) {
+    const width = Math.min(availableWidth, (availableHeight * 4) / 3);
+    return { width, height: Math.min(availableHeight, (width * 3) / 4) };
+  }
+
+  if (ratio === "full") {
+    return { width: availableWidth, height: availableHeight };
+  }
+
+  return {
+    width: availableWidth,
+    height: Math.min(availableHeight, availableWidth * ratioHeights[ratio]),
   };
+};
 
-  const multiplier = ratioMultipliers[ratio];
-
-  if (!multiplier) {
-    return viewHeight;
+/**
+ * A short title for a page: the API's name when it has one, otherwise the
+ * section heading from the page's first lines ("ULKOMAAT", "NBA-KORIPALLO").
+ */
+export const getPageTitle = (response: TextTvResponse): string => {
+  const name = response.page.name?.trim();
+  if (name) {
+    return name;
   }
-
-  const newHeight = width * multiplier;
-  return Math.min(newHeight, viewHeight);
+  const lines =
+    response.page.subPages[0]?.content
+      .find((c) => c.type === "text")
+      ?.line.slice(0, 3) ?? [];
+  for (const line of lines) {
+    const part = (line.text ?? "")
+      .split(/\s{2,}/)
+      .map((x) => x.trim())
+      .find((x) => x && !/^\d+\/\d+$/.test(x));
+    if (part) {
+      return part;
+    }
+  }
+  return "";
 };

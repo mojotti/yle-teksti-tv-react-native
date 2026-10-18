@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, Platform } from "react-native";
-import { lightGray } from "../utils/colors";
+const lightGray = "#a7a7a7";
 
 export const ConfigErrorScreen: React.FunctionComponent = () => (
   <View style={styles.container}>

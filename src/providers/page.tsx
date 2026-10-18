@@ -2,17 +2,23 @@ import React, {
   createContext,
   FunctionComponent,
   PropsWithChildren,
+  useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from "react";
+import { Image } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { getPageImgSrc, getPageJsonPath } from "../utils";
+import { getPageImgSrc, getPageJsonPath, getPageTitle } from "../utils";
 import { mapTextTvResponse } from "../utils/mapper";
 import { TextTvResponse } from "../types/response";
 import { NavigationStatusContext } from "./navigation-status";
 import { AppStateContext } from "./app-state";
+import { SettingsContext } from "./settings";
 
-interface PageFetchError {
+export interface PageFetchError {
   page: string;
   code: number;
 }
@@ -30,7 +36,13 @@ interface ContextItem extends PageDetails {
     byPassCache?: boolean,
     setNewPage?: boolean,
   ) => Promise<PageDetails>;
+  /** Loads a page into the cache without showing it. */
+  prefetch: (page: string, subPage?: string) => void;
+  /** Loads a page's metadata (title) and tells whether the page exists. */
+  lookupPage: (page: string) => Promise<"ok" | "missing" | "error">;
   invalidateCache: () => void;
+  /** Page titles seen so far ("Uutiset", "Urheilu"…), keyed by number. */
+  pageNames: Record<string, string>;
 }
 
 type CacheItem = {
@@ -39,37 +51,96 @@ type CacheItem = {
   timestamp: number;
 };
 
+const CACHE_MS = 3 * 60 * 1000;
+const PAGE_NAMES_KEY = "@pageNames";
+
 export const PageContext = createContext({} as ContextItem);
 
-type PageCacheType = Record<string, CacheItem>;
+const classifyError = (e: unknown): number => {
+  const message = (e as Error)?.message?.toLowerCase() || "";
+
+  if (
+    message.includes("network request failed") ||
+    message.includes("failed to fetch")
+  ) {
+    return 503;
+  }
+  if (message.includes("timeout") || message.includes("timed out")) {
+    return 504;
+  }
+  if (message.includes("abort")) {
+    return 499;
+  }
+  if (message.includes("not found")) {
+    return 404;
+  }
+  if (message.includes("unauthorized") || message.includes("forbidden")) {
+    return 401;
+  }
+  return 418;
+};
 
 export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
-  const [cache, setCache] = useState<PageCacheType>({});
+  const cache = useRef<Record<string, CacheItem>>({});
+  const requestId = useRef(0);
   const [imgSrc, setImgSrc] = useState<string>();
-  const [error, setErrorCode] = useState<PageFetchError>();
+  const [error, setError] = useState<PageFetchError>();
+  const [textTvResponse, setTextTvResponse] = useState<TextTvResponse>();
+  const [pageNames, setPageNames] = useState<Record<string, string>>({});
+  const [namesLoaded, setNamesLoaded] = useState(false);
+  const backfilled = useRef(false);
+  const { settings, loaded: settingsLoaded } = useContext(SettingsContext);
 
   const { addPageLoad } = useContext(AppStateContext);
   const { setPage, setSubPage, setPageDataLoadingStatus, setImgLoadingStatus } =
     useContext(NavigationStatusContext);
 
-  const [textTvResponse, setTextTvResponse] = useState<TextTvResponse>();
+  useEffect(() => {
+    AsyncStorage.getItem(PAGE_NAMES_KEY)
+      .then((v) => v && setPageNames(JSON.parse(v)))
+      .catch(() => {})
+      .finally(() => setNamesLoaded(true));
+  }, []);
 
-  const getCachedValue = (page: string, subPage: string) => {
-    const cacheKey = `${page}-${subPage}`;
-
-    const cachedValue = cache[cacheKey];
-    const validCacheTimestamp = +new Date() - 3 * 60 * 1000;
-
-    if (cachedValue && cachedValue.timestamp >= validCacheTimestamp) {
-      if (
-        cachedValue.textTvResponse.page.number === page &&
-        cachedValue.imgSrc.includes(page)
-      ) {
-        return cachedValue;
+  const rememberName = useCallback((response: TextTvResponse) => {
+    const number = response.page.number;
+    const name = getPageTitle(response);
+    if (!name) {
+      return;
+    }
+    setPageNames((names) => {
+      if (names[number] === name) {
+        return names;
       }
+      const next = { ...names, [number]: name };
+      AsyncStorage.setItem(PAGE_NAMES_KEY, JSON.stringify(next)).catch(
+        () => {},
+      );
+      return next;
+    });
+  }, []);
+
+  const getCached = (page: string, subPage: string) => {
+    const item = cache.current[`${page}-${subPage}`];
+    if (item && item.timestamp >= Date.now() - CACHE_MS) {
+      return item;
+    }
+    return undefined;
+  };
+
+  const load = async (page: string, subPage: string): Promise<CacheItem> => {
+    const response = await fetch(getPageJsonPath(page));
+
+    if (response.status >= 400) {
+      throw Object.assign(new Error("http"), { status: response.status });
     }
 
-    return undefined;
+    const mapped = mapTextTvResponse(await response.json());
+    const src = `${getPageImgSrc(mapped.page.number, subPage)}&cacheValid=${Date.now()}`;
+    const item = { imgSrc: src, textTvResponse: mapped, timestamp: Date.now() };
+    cache.current[`${page}-${subPage}`] = item;
+    rememberName(mapped);
+    return item;
   };
 
   const fetchPage = async (
@@ -78,131 +149,114 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
     bypassCache?: boolean,
     setNewPage?: boolean,
   ): Promise<PageDetails> => {
-    setErrorCode(undefined);
+    const id = ++requestId.current;
+    setError(undefined);
 
-    const cachedValue = getCachedValue(page, subPage);
-
-    if (cachedValue && !bypassCache) {
-      setImgSrc(cachedValue.imgSrc);
-      setTextTvResponse(cachedValue.textTvResponse);
-
+    const show = (item: CacheItem) => {
+      setImgSrc(item.imgSrc);
+      setTextTvResponse(item.textTvResponse);
       if (setNewPage) {
         setPage(page);
         setSubPage("1");
-        addPageLoad();
       }
+      setPageDataLoadingStatus(false);
+      addPageLoad();
+    };
 
-      return {
-        imgSrc: cachedValue.imgSrc,
-        textTvResponse: cachedValue.textTvResponse,
-      };
+    const cached = bypassCache ? undefined : getCached(page, subPage);
+
+    if (cached) {
+      show(cached);
+      return { imgSrc: cached.imgSrc, textTvResponse: cached.textTvResponse };
     }
 
     setPageDataLoadingStatus(true);
     setImgLoadingStatus(true);
 
-    const uri = getPageJsonPath(page);
-
     try {
-      const response = await fetch(uri);
-
-      if (response.status >= 400) {
-        setErrorCode({ page, code: response.status });
+      const item = await load(page, subPage);
+      if (id === requestId.current) {
+        show(item);
+      }
+      return { imgSrc: item.imgSrc, textTvResponse: item.textTvResponse };
+    } catch (e) {
+      const code = (e as { status?: number }).status ?? classifyError(e);
+      const fetchError = { page, code };
+      if (id === requestId.current) {
+        setError(fetchError);
         setPageDataLoadingStatus(false);
         setImgLoadingStatus(false);
-
-        return {
-          error: {
-            page,
-            code: response.status,
-          },
-        };
       }
+      return { error: fetchError };
+    }
+  };
 
-      if (setNewPage) {
-        setPage(page);
-        setSubPage("1");
+  // Favourites saved before titles were remembered get theirs once,
+  // one page at a time, shortly after start.
+  useEffect(() => {
+    if (!settingsLoaded || !namesLoaded || backfilled.current) {
+      return;
+    }
+    backfilled.current = true;
+    const missing = settings.favorites.filter((p) => !pageNames[p]);
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      for (const p of missing) {
+        if (cancelled) {
+          return;
+        }
+        await lookupPage(p);
       }
+    }, 2000);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsLoaded, namesLoaded]);
 
-      const mappedPage = mapTextTvResponse(await response.json());
+  const prefetch = (page: string, subPage = "1") => {
+    if (getCached(page, subPage)) {
+      return;
+    }
+    load(page, subPage)
+      .then((item) => Image.prefetch(item.imgSrc))
+      .catch(() => {});
+  };
 
-      const src = getPageImgSrc(mappedPage.page.number, subPage);
-
-      const srcWithCache = `${src}&cacheValid=${+new Date()}`;
-
-      setTextTvResponse(mappedPage);
-      setImgSrc(srcWithCache);
-
-      const cacheKey = `${page}-${subPage}`;
-
-      setCache({
-        ...cache,
-        [cacheKey]: {
-          timestamp: +new Date(),
-          textTvResponse: mappedPage,
-          imgSrc: srcWithCache,
-        },
-      });
-
-      setPageDataLoadingStatus(false);
-
-      addPageLoad();
-
-      return {
-        imgSrc: srcWithCache,
-        textTvResponse: mappedPage,
-      };
+  const lookupPage = async (page: string) => {
+    const cached = getCached(page, "1");
+    if (cached) {
+      rememberName(cached.textTvResponse);
+      return "ok" as const;
+    }
+    try {
+      await load(page, "1");
+      return "ok" as const;
     } catch (e) {
-      const error = e as Error;
-      let errorCode = 418; // Default: generic client error
-      const errorMessage = error.message?.toLowerCase() || "";
-
-      // Classify error based on error message
-      if (
-        errorMessage.includes("network request failed") ||
-        errorMessage.includes("failed to fetch")
-      ) {
-        errorCode = 503; // Network connectivity issue
-      } else if (
-        errorMessage.includes("timeout") ||
-        errorMessage.includes("timed out")
-      ) {
-        errorCode = 504; // Timeout error
-      } else if (errorMessage.includes("abort")) {
-        errorCode = 499; // Request cancelled
-      } else if (errorMessage.includes("not found")) {
-        errorCode = 404; // Not found
-      } else if (
-        errorMessage.includes("unauthorized") ||
-        errorMessage.includes("forbidden")
-      ) {
-        errorCode = 401; // Authentication/authorization issue
-      }
-
-      setErrorCode({ page, code: errorCode });
-
-      return {
-        error: {
-          page,
-          code: errorCode,
-        },
-      };
+      return (e as { status?: number }).status === 404
+        ? ("missing" as const)
+        : ("error" as const);
     }
   };
 
   const invalidateCache = () => {
-    setCache({});
+    cache.current = {};
   };
 
   return (
     <PageContext.Provider
       value={{
         fetchPage,
+        prefetch,
+        lookupPage,
         invalidateCache,
         error,
         imgSrc,
         textTvResponse,
-      }}>
+        pageNames,
+      }}
+    >
       {props.children}
     </PageContext.Provider>
   );

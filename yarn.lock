@@ -1602,11 +1602,6 @@
   dependencies:
     merge-options "^3.0.4"
 
-"@react-native-community/checkbox@^0.5.20":
-  version "0.5.20"
-  resolved "https://registry.npmjs.org/@react-native-community/checkbox/-/checkbox-0.5.20.tgz"
-  integrity sha512-NuTAOFmttPEX7cwDbVr5Rf0HR86zCzX2FllebMayxca//dFH6X5DLySftra/PC2K9kt42yashWK7T2Tucm5JTQ==
-
 "@react-native-community/cli-clean@20.0.2":
   version "20.0.2"
   resolved "https://registry.npmjs.org/@react-native-community/cli-clean/-/cli-clean-20.0.2.tgz"
@@ -1980,16 +1975,6 @@
     react-is "^19.1.0"
     use-latest-callback "^0.2.4"
     use-sync-external-store "^1.5.0"
-
-"@react-navigation/drawer@^7.7.10":
-  version "7.7.10"
-  resolved "https://registry.npmjs.org/@react-navigation/drawer/-/drawer-7.7.10.tgz"
-  integrity sha512-FGYU5Ebd2whTa4Z+RBCxnWqmyWIQGTJ7PAAhk2RjlVrEXLU0HaFR5JGmEHuNm/Cm9xX3xCwOxYZiA0Xi/DeyAA==
-  dependencies:
-    "@react-navigation/elements" "^2.9.3"
-    color "^4.2.3"
-    react-native-drawer-layout "^4.2.1"
-    use-latest-callback "^0.2.4"
 
 "@react-navigation/elements@^2.9.3":
   version "2.9.3"
@@ -5234,11 +5219,6 @@ loose-envify@^1.0.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-lottie-react-native@^7.3.4:
-  version "7.3.4"
-  resolved "https://registry.npmjs.org/lottie-react-native/-/lottie-react-native-7.3.4.tgz"
-  integrity sha512-XUh7eGFb7ID8JRdU6U4N4cYQeYmjtdQRvd8ZXJ6xrdSsn5gZD0c79ITOREPcwJg4YupBFHgyV1GXdAHQP+KYUQ==
-
 lru-cache@^10.2.0:
   version "10.4.3"
   resolved "https://registry.npmjs.org/lru-cache/-/lru-cache-10.4.3.tgz"
@@ -6067,14 +6047,6 @@ react-native-dotenv@^3.4.11:
   integrity sha512-6vnIE+WHABSeHCaYP6l3O1BOEhWxKH6nHAdV7n/wKn/sciZ64zPPp2NUdEUf1m7g4uuzlLbjgr+6uDt89q2DOg==
   dependencies:
     dotenv "^16.4.5"
-
-react-native-drawer-layout@^4.2.1:
-  version "4.2.1"
-  resolved "https://registry.npmjs.org/react-native-drawer-layout/-/react-native-drawer-layout-4.2.1.tgz"
-  integrity sha512-liwRJ7ynRU/ogRlUdiK1Yoi1VzUSq2Vu/RU+UgqlMB3XduslZ1DZg/mTX0f1uCEV2dJ4ec+1fRa3OlIierfyZg==
-  dependencies:
-    color "^4.2.3"
-    use-latest-callback "^0.2.4"
 
 react-native-gesture-handler@^2.30.0:
   version "2.30.0"

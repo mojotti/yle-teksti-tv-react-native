@@ -31,6 +31,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     config.delegateClass = SceneDelegate.self
     return config
   }
+
+  func application(
+    _ application: UIApplication,
+    supportedInterfaceOrientationsFor window: UIWindow?
+  ) -> UIInterfaceOrientationMask {
+    OrientationLock.mask
+  }
 }
 
 // iOS 27 SDK requires the UIScene life cycle, so the window is created here
@@ -78,6 +85,10 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 // decides: light content, hidden in landscape.
 class RootViewController: UIViewController {
   override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+
+  override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+    OrientationLock.mask
+  }
 
   override var prefersStatusBarHidden: Bool {
     view.bounds.width > view.bounds.height

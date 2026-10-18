@@ -3,6 +3,8 @@ import React, {
   Dispatch,
   PropsWithChildren,
   SetStateAction,
+  useCallback,
+  useRef,
   useState,
 } from "react";
 
@@ -15,6 +17,11 @@ interface NavigationStatusContext {
   isLoadingPageData: boolean;
   setImgLoadingStatus: Dispatch<SetStateAction<boolean>>;
   setPageDataLoadingStatus: Dispatch<SetStateAction<boolean>>;
+  /** Visited pages, oldest first, each page once. */
+  history: string[];
+  pushHistory: (page: string) => void;
+  /** Drops the current page and returns the one before it, if any. */
+  popHistory: () => string | undefined;
 }
 
 export const NavigationStatusContext = createContext(
@@ -28,6 +35,22 @@ export const NavigationStatusProvider: React.FC<PropsWithChildren> = (
   const [subPage, setSubPage] = useState("1");
   const [isLoadingImg, setImgLoadingStatus] = useState(true);
   const [isLoadingPageData, setPageDataLoadingStatus] = useState(true);
+  const historyRef = useRef<string[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
+
+  const pushHistory = useCallback((p: string) => {
+    historyRef.current = [
+      ...historyRef.current.filter((x) => x !== p),
+      p,
+    ].slice(-30);
+    setHistory(historyRef.current);
+  }, []);
+
+  const popHistory = useCallback(() => {
+    historyRef.current = historyRef.current.slice(0, -1);
+    setHistory(historyRef.current);
+    return historyRef.current[historyRef.current.length - 1];
+  }, []);
 
   return (
     <NavigationStatusContext.Provider
@@ -40,7 +63,11 @@ export const NavigationStatusProvider: React.FC<PropsWithChildren> = (
         isLoadingImg,
         setImgLoadingStatus,
         setPageDataLoadingStatus,
-      }}>
+        history,
+        pushHistory,
+        popHistory,
+      }}
+    >
       {props.children}
     </NavigationStatusContext.Provider>
   );

@@ -74,7 +74,7 @@ export const AppStateProvider: FunctionComponent<PropsWithChildren> = (
         }
 
         setRatedStatus(JSON.parse(hasRated));
-      } catch (e) {
+      } catch {
         console.log("error while reading from local storage");
       }
     })();
@@ -106,7 +106,7 @@ export const AppStateProvider: FunctionComponent<PropsWithChildren> = (
 
     try {
       await AsyncStorage.setItem("@pageViews", JSON.stringify(views + 1));
-    } catch (e) {
+    } catch {
       console.log("error while saving to local storage");
     }
   };
@@ -116,7 +116,8 @@ export const AppStateProvider: FunctionComponent<PropsWithChildren> = (
       value={{
         addPageLoad,
         appState,
-      }}>
+      }}
+    >
       {props.children}
     </AppStateContext.Provider>
   );
