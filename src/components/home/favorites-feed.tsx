@@ -27,7 +27,9 @@ const IMAGE_RATIO = (IMAGE.height - IMAGE.bottom) / (IMAGE.width - IMAGE.left);
  */
 export const FavoritesFeed: React.FC<{
   onOpen: (page: string, subPage: string) => void;
-}> = ({ onOpen }) => {
+  /** Opens the keypad for adding a favourite by number. */
+  onAdd?: () => void;
+}> = ({ onOpen, onAdd }) => {
   const theme = useTheme();
   const { settings } = useContext(SettingsContext);
   const [width, setWidth] = useState(0);
@@ -40,6 +42,25 @@ export const FavoritesFeed: React.FC<{
     setTimeout(() => setRefreshing(false), 600);
   }, []);
 
+  const addButton = onAdd ? (
+    <Pressable
+      onPress={onAdd}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.addButton,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.surfaceBorder,
+          opacity: pressed ? 0.6 : 1,
+        },
+      ]}
+    >
+      <Text style={[styles.addText, { color: theme.text }]}>
+        + Lisää suosikki
+      </Text>
+    </Pressable>
+  ) : null;
+
   if (!settings.favorites.length) {
     return (
       <View style={styles.empty}>
@@ -47,6 +68,7 @@ export const FavoritesFeed: React.FC<{
           Suosikkeja ei vielä ole. Lisää sivu suosikiksi yläpalkin sydämestä tai
           kohdasta Asetukset → Suosikit, niin se näkyy täällä.
         </Text>
+        {addButton}
       </View>
     );
   }
@@ -67,12 +89,16 @@ export const FavoritesFeed: React.FC<{
         />
       }
       ListFooterComponent={
-        settings.favorites.length < 3 ? (
-          <Text style={[styles.footer, { color: theme.textMuted }]}>
-            Lisää sivuja suosikeiksi yläpalkin sydämestä tai kohdasta Asetukset
-            → Suosikit, niin ne näkyvät tässä allekkain.
-          </Text>
-        ) : null
+        <View style={styles.footerBox}>
+          {addButton}
+          {settings.favorites.length < 3 && (
+            <Text style={[styles.footer, { color: theme.textMuted }]}>
+              Lisää sivuja suosikeiksi yläpalkin sydämestä, tästä tai kohdasta
+              Asetukset → Suosikit. Myös sivun, joka ilmestyy vain tiettyinä
+              päivinä, voi lisätä.
+            </Text>
+          )}
+        </View>
       }
       renderItem={({ item }) =>
         width ? (
@@ -170,7 +196,7 @@ const Card: React.FC<{
         <View style={[styles.missing, { width, height }]}>
           <Text
             style={[theme.number(24), { color: tt.red }]}
-          >{`Sivua ${page} ei saatu`}</Text>
+          >{`Sivu ${page} ei ole nyt saatavilla`}</Text>
         </View>
       ) : (
         <FlatList
@@ -268,6 +294,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 32,
+  },
+  footerBox: {
+    gap: 12,
+    paddingTop: 8,
+    alignItems: "center",
+  },
+  addButton: {
+    alignSelf: "center",
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  addText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   footer: {
     textAlign: "center",

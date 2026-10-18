@@ -8,6 +8,36 @@ describe("loadSettings", () => {
     const s = await loadSettings();
     expect(s).toEqual(defaultSettings);
     expect(s.theme).toBe("glass");
+    expect(s.showSubpageRow).toBe(false);
+    expect(s.pageLinks).toBe(false);
+    expect(s.dockContent).toBe("both");
+  });
+
+  it("moves settings saved before version 2 to the new defaults", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({
+        pageLinks: true,
+        showSubpageRow: true,
+        favoritesReplaceLinks: true,
+        favorites: ["100"],
+      }),
+    );
+    const s = await loadSettings();
+    expect(s.pageLinks).toBe(false);
+    expect(s.showSubpageRow).toBe(false);
+    expect(s.dockContent).toBe("favorites");
+    expect(s.version).toBe(2);
+    expect("favoritesReplaceLinks" in s).toBe(false);
+  });
+
+  it("keeps choices made after version 2", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 2, pageLinks: true, showSubpageRow: true }),
+    );
+    const s = await loadSettings();
+    expect(s.pageLinks).toBe(true);
     expect(s.showSubpageRow).toBe(true);
   });
 
@@ -53,7 +83,7 @@ describe("loadSettings", () => {
     );
     const s = await loadSettings();
     expect(s.theme).toBe("teletext");
-    expect(s.showSubpageRow).toBe(true);
+    expect(s.dockContent).toBe("both");
     expect(s.offlineAutoDownload).toBe(false);
   });
 });

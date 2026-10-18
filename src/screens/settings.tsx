@@ -68,20 +68,13 @@ export const SettingsScreen: React.FC = () => {
         <GroupHeader title="Suosikit" />
         <Favorites onAdd={() => setAdding(true)} />
         {addError && (
-          <Text style={[styles.addError, { color: tt.red }]}>{addError}</Text>
+          <Text style={[styles.addError, { color: theme.textMuted }]}>
+            {addError}
+          </Text>
         )}
         <Footnote text="Suosikit näkyvät alapalkissa tässä järjestyksessä. Sivun voi lisätä suosikiksi myös yläpalkin sydämestä." />
         <View style={styles.gap} />
         <Group>
-          <Row
-            label="Piilota sivun linkit"
-            detail="Alapalkissa näytetään vain suosikit"
-          >
-            <Toggle
-              value={settings.favoritesReplaceLinks}
-              onChange={set("favoritesReplaceLinks")}
-            />
-          </Row>
           <Row
             label="Aloitusnäkymä"
             detail="Näkymä, joka avautuu sovelluksen käynnistyessä"
@@ -159,13 +152,24 @@ export const SettingsScreen: React.FC = () => {
               disabled={!settings.pageLinks}
             />
           </Row>
-          <Row label="Alapalkki" detail="Suosikit ja sivun linkit sivun alla">
+          <Row label="Alapalkki" detail="Sivunumeropainikkeet sivun alla">
             <Segmented
               value={settings.showDock ? "show" : "hide"}
               onChange={(v) => update({ showDock: v === "show" })}
               options={[
                 { value: "show", label: "Näytä" },
                 { value: "hide", label: "Piilota" },
+              ]}
+            />
+          </Row>
+          <Row label="Alapalkin sisältö" disabled={!settings.showDock}>
+            <Segmented
+              value={settings.dockContent}
+              onChange={set("dockContent")}
+              options={[
+                { value: "favorites", label: "Suosikit" },
+                { value: "links", label: "Linkit" },
+                { value: "both", label: "Molemmat" },
               ]}
             />
           </Row>
@@ -248,13 +252,13 @@ export const SettingsScreen: React.FC = () => {
           ) {
             return;
           }
-          // Fetch the page once to get its title and check that it exists.
+          // Fetch the page once to get its title. Pages that exist only some
+          // days (221 on Liiga game days) are added anyway.
           const result = await lookupPage(page);
           if (result === "missing") {
             setAddError(
-              `Sivua ${page} ei ole olemassa, joten sitä ei lisätty.`,
+              `Sivua ${page} ei ole juuri nyt olemassa, mutta se lisättiin. Se näkyy, kun sivu taas ilmestyy.`,
             );
-            return;
           }
           update({
             favorites: addFavorite(

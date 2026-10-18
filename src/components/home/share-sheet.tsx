@@ -223,6 +223,8 @@ export const ShareSheet: React.FC<{
           <Image
             source={{ uri: uris[renderSub] ?? remote(renderSub) }}
             resizeMode="stretch"
+            // No Android fade-in: captures taken mid-fade came out dimmed.
+            fadeDuration={0}
             style={styles.shotImage}
             onLoadEnd={() => {
               loaded.current?.();

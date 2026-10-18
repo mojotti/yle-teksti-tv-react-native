@@ -77,6 +77,7 @@ const HomeScreen: React.FC = () => {
     textTvResponse,
     imgSrc,
     stale,
+    lookupPage,
   } = useContext(PageContext);
   const nav = useContext(NavigationStatusContext);
   const {
@@ -94,6 +95,8 @@ const HomeScreen: React.FC = () => {
   const isLandscape = orientation === OrientationTypes.Landscape;
 
   const [keypadOpen, setKeypadOpen] = useState(false);
+  // Keypad for adding a favourite from the favourites feed.
+  const [addingFavorite, setAddingFavorite] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   // Favourites feed as the start view (setting), or opened from the menu.
@@ -373,6 +376,9 @@ const HomeScreen: React.FC = () => {
   ]);
 
   const menuItems = [
+    ...(c.share
+      ? [{ label: "Jaa sivu", icon: "share-outline", onPress: c.share }]
+      : []),
     ...(settings.favorites.length
       ? [
           {
@@ -470,7 +476,10 @@ const HomeScreen: React.FC = () => {
                 onKeypad={() => setKeypadOpen(true)}
                 onMenu={() => setMenuOpen(true)}
               />
-              <FavoritesFeed onOpen={openFromFeed} />
+              <FavoritesFeed
+                onOpen={openFromFeed}
+                onAdd={() => setAddingFavorite(true)}
+              />
             </>
           ) : (
             <>
@@ -505,6 +514,21 @@ const HomeScreen: React.FC = () => {
           goTo(p);
         }}
         onClose={() => setKeypadOpen(false)}
+      />
+      <Keypad
+        visible={addingFavorite}
+        title="Lisää suosikki"
+        homeKey={false}
+        onSubmit={(p) => {
+          setAddingFavorite(false);
+          // Pages that exist only some days (221) can be added too; the
+          // title is fetched for the list when the page is available.
+          lookupPage(p).catch(() => {});
+          update({
+            favorites: addFavorite(settings.favorites, p, MAX_FAVORITES),
+          });
+        }}
+        onClose={() => setAddingFavorite(false)}
       />
       <ShareSheet
         visible={shareOpen}

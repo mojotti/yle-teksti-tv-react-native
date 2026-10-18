@@ -17,11 +17,13 @@ import { setPortraitLock } from "../utils/native";
 export type ScreenRatio = "tv" | "square" | "tall" | "full";
 export type FavoriteIcon = "heart" | "star" | "none";
 export type SwipeMode = "pagesHorizontal" | "pagesVertical";
+/** What the bottom bar (dock) lists. */
+export type DockContent = "favorites" | "links" | "both";
 
 export interface Settings {
   favorites: string[];
   favoriteIcon: FavoriteIcon;
-  favoritesReplaceLinks: boolean;
+  dockContent: DockContent;
   startView: "front" | "favorites";
   theme: ThemeName;
   ambientGlow: boolean;
@@ -35,6 +37,8 @@ export interface Settings {
   orientationLock: "auto" | "portrait";
   offlineAutoDownload: boolean;
   onboardingDone: boolean;
+  /** Bumped when defaults change for existing users (see migrate). */
+  version: number;
 }
 
 export const MAX_FAVORITES = 20;
@@ -42,19 +46,39 @@ export const MAX_FAVORITES = 20;
 export const defaultSettings: Settings = {
   favorites: [],
   favoriteIcon: "heart",
-  favoritesReplaceLinks: false,
+  dockContent: "both",
   startView: "front",
   theme: "glass",
   ambientGlow: true,
   screenRatio: "tall",
   swipe: "pagesHorizontal",
-  pageLinks: true,
+  pageLinks: false,
   highlightScreenLinks: false,
   showDock: true,
-  showSubpageRow: true,
+  showSubpageRow: false,
   orientationLock: "auto",
   offlineAutoDownload: false,
   onboardingDone: false,
+  version: 2,
+};
+
+/**
+ * Brings stored settings up to date. Version 2: page-number links and the
+ * subpage row are off by default; "favoritesReplaceLinks" became
+ * dockContent.
+ */
+export const migrate = (stored: Record<string, unknown>): Settings => {
+  const s = { ...defaultSettings, ...stored } as Settings & {
+    favoritesReplaceLinks?: boolean;
+  };
+  if (!stored.version || (stored.version as number) < 2) {
+    s.pageLinks = false;
+    s.showSubpageRow = false;
+    s.dockContent = s.favoritesReplaceLinks ? "favorites" : "both";
+    s.version = 2;
+  }
+  delete s.favoritesReplaceLinks;
+  return s;
 };
 
 interface SettingsContextValue {
@@ -97,7 +121,7 @@ export const loadSettings = async (): Promise<Settings> => {
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
   if (stored) {
-    const parsed = { ...defaultSettings, ...JSON.parse(stored) };
+    const parsed = migrate(JSON.parse(stored));
     // Themes that no longer exist ("classic") fall back to the default.
     if (!themeNames.includes(parsed.theme)) {
       parsed.theme = defaultSettings.theme;

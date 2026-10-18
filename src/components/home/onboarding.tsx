@@ -15,7 +15,6 @@ export type TargetId =
   | "fastext"
   | "home"
   | "refresh"
-  | "share"
   | "favorite"
   | "menu";
 
@@ -85,11 +84,6 @@ export const STEPS: { target: TargetId; title: string; text: string }[] = [
     text: "Hakee sivun uusimman version.",
   },
   {
-    target: "share",
-    title: "Jaa",
-    text: "Jaa sivu kuvana tai linkkinä, tai tallenna se puhelimen kuviin.",
-  },
-  {
     target: "favorite",
     title: "Suosikit",
     text: "Sydämestä sivu lisätään suosikkeihin. Suosikit näkyvät alapalkissa.",
@@ -97,7 +91,7 @@ export const STEPS: { target: TargetId; title: string; text: string }[] = [
   {
     target: "menu",
     title: "Lisää toimintoja",
-    text: "Kolmen pisteen valikosta löydät asetukset, suosikkinäkymän ja tämän ohjeen.",
+    text: "Kolmen pisteen valikosta voit jakaa sivun kuvana tai linkkinä. Sieltä löydät myös suosikkinäkymän, asetukset ja tämän ohjeen.",
   },
 ];
 

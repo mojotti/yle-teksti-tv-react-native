@@ -64,10 +64,10 @@ describe("Header", () => {
   it("shows the page number and its title", async () => {
     await withSettings(<Header c={controls()} />);
     expect(screen.getByText("235")).toBeTruthy();
-    expect(screen.getByText("NHL-jääkiekko")).toBeTruthy();
+    expect(screen.getByText("NHL-jääkiekko · 1/5")).toBeTruthy();
   });
 
-  it("has home, back, favourite, refresh, share and menu buttons that work", async () => {
+  it("has home, back, favourite, refresh and menu buttons that work", async () => {
     const c = controls();
     await withSettings(<Header c={c} />);
     for (const [label, fn] of [
@@ -75,7 +75,6 @@ describe("Header", () => {
       ["Takaisin", c.goBack],
       ["Lisää suosikkeihin", c.toggleFavorite],
       ["Päivitä", c.refresh],
-      ["Jaa sivu", c.share],
       ["Lisää", c.openMenu],
     ] as const) {
       await fireEvent.press(screen.getByLabelText(label));
@@ -102,9 +101,14 @@ describe("Header", () => {
     expect(screen.getByLabelText("Etusivu")).toBeDisabled();
   });
 
-  it("hides share when there is nothing to share", async () => {
-    await withSettings(<Header c={controls({ share: undefined })} />);
+  it("keeps share in the menu, not the header", async () => {
+    await withSettings(<Header c={controls()} />);
     expect(screen.queryByLabelText("Jaa sivu")).toBeNull();
+  });
+
+  it("shows the subpage after the title", async () => {
+    await withSettings(<Header c={controls({ subPage: 2 })} />);
+    expect(screen.getByText("NHL-jääkiekko · 2/5")).toBeTruthy();
   });
 
   it("keeps the favourite button even when chips show no icon", async () => {
@@ -134,9 +138,15 @@ describe("Rail (landscape)", () => {
 });
 
 describe("SubpageRow", () => {
-  it("is shown by default, also for single pages", async () => {
+  it("is hidden by default", async () => {
+    await withSettings(<SubpageRow c={controls()} />);
+    expect(screen.queryByText("1/5")).toBeNull();
+  });
+
+  it("can be shown, also for single pages", async () => {
     await withSettings(
       <SubpageRow c={controls({ subPageCount: 1, nextSub: 1, prevSub: 1 })} />,
+      { showSubpageRow: true },
     );
     expect(screen.getByText("1/1")).toBeTruthy();
     expect(screen.getByLabelText("Seuraava alasivu")).toBeDisabled();
@@ -144,18 +154,11 @@ describe("SubpageRow", () => {
 
   it("changes subpage with its arrows", async () => {
     const c = controls();
-    await withSettings(<SubpageRow c={c} />);
+    await withSettings(<SubpageRow c={c} />, { showSubpageRow: true });
     await fireEvent.press(screen.getByLabelText("Seuraava alasivu"));
     await fireEvent.press(screen.getByLabelText("Edellinen alasivu"));
     expect(c.goNextSub).toHaveBeenCalled();
     expect(c.goPrevSub).toHaveBeenCalled();
-  });
-
-  it("can be hidden in portrait from settings", async () => {
-    await withSettings(<SubpageRow c={controls()} />, {
-      showSubpageRow: false,
-    });
-    expect(screen.queryByText("1/5")).toBeNull();
   });
 });
 
@@ -222,13 +225,12 @@ describe("Keypad", () => {
 });
 
 describe("first-run guide", () => {
-  it("covers the page number, colour keys, home, refresh, share, favourites and menu", () => {
+  it("covers the page number, colour keys, home, refresh, favourites and menu", () => {
     expect(STEPS.map((s) => s.target)).toEqual([
       "pill",
       "fastext",
       "home",
       "refresh",
-      "share",
       "favorite",
       "menu",
     ]);

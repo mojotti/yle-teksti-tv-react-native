@@ -13,7 +13,6 @@ export type Key = {
   trail?: string;
   text: string;
   label: string;
-  caption: string;
   onPress: () => void;
   enabled: boolean;
   textColor: string;
@@ -59,7 +58,6 @@ export const buildKeys = (
       lead: pagePrev,
       text: c.prevPage ?? "",
       label: `Edellinen sivu ${c.prevPage ?? ""}`,
-      caption: "Edellinen",
       onPress: c.goPrevPage,
       enabled: !!c.prevPage,
     },
@@ -69,7 +67,6 @@ export const buildKeys = (
       trail: pageNext,
       text: c.nextPage ?? "",
       label: `Seuraava sivu ${c.nextPage ?? ""}`,
-      caption: "Seuraava",
       onPress: c.goNextPage,
       enabled: !!c.nextPage,
     },
@@ -79,7 +76,6 @@ export const buildKeys = (
       lead: subPrev,
       text: sub(c.prevSub),
       label: `Edellinen alasivu ${sub(c.prevSub)}`,
-      caption: "Alasivu",
       onPress: c.goPrevSub,
       enabled: hasSubs,
     },
@@ -89,7 +85,6 @@ export const buildKeys = (
       trail: subNext,
       text: sub(c.nextSub),
       label: `Seuraava alasivu ${sub(c.nextSub)}`,
-      caption: "Alasivu",
       onPress: c.goNextSub,
       enabled: hasSubs,
     },
@@ -167,11 +162,6 @@ export const FastextRow: React.FC<{ c: HomeControls }> = ({ c }) => {
             size={22}
             color={theme.glass ? theme.text : k.textColor}
           />
-          {theme.glass && (
-            <Text style={[styles.caption, { color: theme.textMuted }]}>
-              {k.caption}
-            </Text>
-          )}
         </Pressable>
       ))}
     </View>
@@ -296,6 +286,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 6,
+    minHeight: 54,
   },
   glow: {
     width: 22,
@@ -305,10 +296,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.9,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 0 },
-  },
-  caption: {
-    fontSize: 10,
-    marginTop: 1,
   },
   ticks: {
     flexDirection: "row",

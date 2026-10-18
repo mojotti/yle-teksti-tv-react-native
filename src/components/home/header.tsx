@@ -74,7 +74,7 @@ const CoachIconButton: React.FC<
   );
 };
 
-/** Right-hand controls: refresh, share and the ⋯ menu. */
+/** Right-hand controls: refresh and the ⋯ menu (which also has sharing). */
 const Trailing: React.FC<{ c: HomeControls }> = ({ c }) => (
   <>
     <CoachIconButton
@@ -83,14 +83,6 @@ const Trailing: React.FC<{ c: HomeControls }> = ({ c }) => (
       label="Päivitä"
       onPress={c.refresh}
     />
-    {c.share && (
-      <CoachIconButton
-        target="share"
-        name="share-outline"
-        label="Jaa sivu"
-        onPress={c.share}
-      />
-    )}
     <CoachIconButton
       target="menu"
       name="ellipsis-horizontal"
@@ -100,7 +92,7 @@ const Trailing: React.FC<{ c: HomeControls }> = ({ c }) => (
   </>
 );
 
-/** Portrait header: back, home, page pill, favourite … share, menu. */
+/** Portrait header: back, home, page pill, favourite … refresh, menu. */
 export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
   const theme = useTheme();
   return (
@@ -143,7 +135,9 @@ export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
         numberOfLines={2}
         style={[styles.title, { color: theme.textMuted }]}
       >
-        {c.title || " "}
+        {[c.title, c.subPageCount > 1 && `${c.subPage}/${c.subPageCount}`]
+          .filter(Boolean)
+          .join(" · ") || " "}
       </Text>
     </View>
   );
@@ -189,8 +183,8 @@ const styles = StyleSheet.create({
     height: 52,
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
+    gap: 6,
+    paddingHorizontal: 8,
   },
   glassHeader: {
     marginHorizontal: 8,

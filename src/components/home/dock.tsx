@@ -38,14 +38,17 @@ const useSections = (): Section[] => {
       : favoriteIconName(settings.favoriteIcon, false);
   // Pages without links fall back to the main sections; say so.
   const quick = isDefaultLinks(pageLinks);
-  if (!favorites.length) {
+  const favSection = { title: "Suosikit", pages: favorites, edit: true, icon };
+  const content = settings.dockContent;
+  // Without favourites there is nothing else to show but the links.
+  if (!favorites.length || content === "links") {
     return [{ title: quick ? "Pikalinkit" : "Sivun linkit", pages: pageLinks }];
   }
-  if (settings.favoritesReplaceLinks) {
-    return [{ title: "Suosikit", pages: favorites, edit: true, icon }];
+  if (content === "favorites") {
+    return [favSection];
   }
   return [
-    { title: "Suosikit", pages: favorites, edit: true, icon },
+    favSection,
     { title: quick ? "Pikalinkit" : "Tällä sivulla", pages: pageLinks },
   ];
 };
