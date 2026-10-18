@@ -14,3 +14,5 @@ gem 'bigdecimal'
 gem 'logger'
 gem 'benchmark'
 gem 'mutex_m'
+# ...and Ruby 4.0 more (kconv is needed by CFPropertyList)
+gem 'nkf'
