@@ -114,4 +114,20 @@ describe("loadSettings", () => {
     expect(s.dockContent).toBe("both");
     expect(s.offlineAutoDownload).toBe(false);
   });
+
+  it("turns the background glow off for earlier settings", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 4, ambientGlow: true }),
+    );
+    expect((await loadSettings()).ambientGlow).toBe(false);
+  });
+
+  it("keeps the glow for someone who turned it on later", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 5, ambientGlow: true }),
+    );
+    expect((await loadSettings()).ambientGlow).toBe(true);
+  });
 });
