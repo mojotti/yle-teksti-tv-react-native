@@ -86,6 +86,17 @@ struct NavigateIntent: AppIntent {
   }
 }
 
+/// The widget's refresh button. Running any intent reloads the widget's
+/// timeline, which fetches the page again.
+struct RefreshIntent: AppIntent {
+  static var title: LocalizedStringResource = "Päivitä"
+  static var isDiscoverable = false
+
+  func perform() async throws -> some IntentResult {
+    .result()
+  }
+}
+
 // MARK: - Configuration
 
 struct PageEntity: AppEntity {
@@ -225,6 +236,15 @@ struct PageWidgetView: View {
           Text("\(entry.sub)/\(entry.subCount)").font(.system(.caption, design: .monospaced))
         }
         Text(entry.date, style: .time).font(.caption2).foregroundStyle(.secondary)
+        Button(intent: RefreshIntent()) {
+          Image(systemName: "arrow.clockwise")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white)
+            .frame(width: 26, height: 22)
+            .background(RoundedRectangle(cornerRadius: 5).fill(Color(white: 0.2)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Päivitä")
       }
       GeometryReader { geo in
         if let image = entry.image {

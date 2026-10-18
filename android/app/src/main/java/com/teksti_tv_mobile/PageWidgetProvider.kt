@@ -49,7 +49,8 @@ class PageWidgetProvider : AppWidgetProvider() {
     // One tap at a time, so quick taps each move one step from the last result.
     taps.execute {
       try {
-        navigate(context, id, direction)
+        // "refresh" just redraws: update() fetches the page again.
+        if (direction != "refresh") navigate(context, id, direction)
         update(context, AppWidgetManager.getInstance(context), id)
       } finally {
         pending.finish()
@@ -192,6 +193,7 @@ class PageWidgetProvider : AppWidgetProvider() {
         R.id.widget_root,
         PendingIntent.getActivity(context, id, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE),
       )
+      views.setOnClickPendingIntent(R.id.key_refresh, keyIntent(context, id, "refresh", 5))
       views.setOnClickPendingIntent(R.id.key_prev_page, keyIntent(context, id, "prevPage", 1))
       views.setOnClickPendingIntent(R.id.key_next_page, keyIntent(context, id, "nextPage", 2))
       views.setOnClickPendingIntent(R.id.key_prev_sub, keyIntent(context, id, "prevSub", 3))

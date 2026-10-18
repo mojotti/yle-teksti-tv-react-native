@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Teksti-TV</string>
     <string name="widget_name">Teksti-TV-sivu</string>
+    <string name="widget_refresh">Päivitä</string>
     <string name="widget_key_left">Edellinen sivu</string>
     <string name="widget_key_right">Seuraava sivu</string>
     <string name="widget_key_up">Edellinen alasivu</string>

@@ -1,7 +1,9 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
+  AppState,
   Image,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,6 +34,7 @@ import {
 import { Keypad } from "../components/home/keypad";
 import { version as appVersion } from "../../package.json";
 import { addFavorite } from "./home-model";
+import { getWidgets, requestPinWidget, setWidgetPage } from "../utils/native";
 import type { HomeScreenNavigationProp } from "../../App";
 
 const FEEDBACK_EMAIL = "tekstitvmobile@gmail.com";
@@ -41,6 +44,9 @@ export const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { settings, update } = useContext(SettingsContext);
   const [adding, setAdding] = useState(false);
+  // Android widget whose page is being changed with the keypad.
+  const [editingWidget, setEditingWidget] = useState<number>();
+  const [widgetsVersion, setWidgetsVersion] = useState(0);
   const [addError, setAddError] = useState<string>();
   const { lookupPage, pageNames } = useContext(PageContext);
   const latestFavorites = useRef(settings.favorites);
@@ -202,6 +208,9 @@ export const SettingsScreen: React.FC = () => {
         <OfflineGroup />
         <Footnote text="Suosikit alasivuineen tallennetaan puhelimeen, joten voit lukea niitä myös ilman verkkoyhteyttä, esimerkiksi lentokoneessa." />
 
+        <GroupHeader title="Widget" />
+        <WidgetGroup version={widgetsVersion} onEdit={setEditingWidget} />
+
         <GroupHeader title="Tietoa" />
         <Group>
           <Row
@@ -238,6 +247,19 @@ export const SettingsScreen: React.FC = () => {
         </Group>
         <Footnote text="Sovellus näyttää Yle Teksti-TV:n sisältöä Ylen avoimen rajapinnan kautta." />
       </ScrollView>
+      <Keypad
+        visible={editingWidget !== undefined}
+        title="Widgetin sivu"
+        homeKey={false}
+        onClose={() => setEditingWidget(undefined)}
+        onSubmit={(page) => {
+          if (editingWidget !== undefined) {
+            setWidgetPage(editingWidget, page);
+          }
+          setEditingWidget(undefined);
+          setWidgetsVersion((v) => v + 1);
+        }}
+      />
       <Keypad
         visible={adding}
         title="Lisää suosikki"
@@ -324,6 +346,85 @@ const OfflineGroup: React.FC = () => {
         <Icon name="cloud-download-outline" size={20} color={theme.textMuted} />
       </Row>
     </Group>
+  );
+};
+
+/**
+ * The home-screen widget. On Android the app can list its widgets, change
+ * their page and ask the launcher to add one; iOS only allows explaining.
+ */
+const WidgetGroup: React.FC<{
+  version: number;
+  onEdit: (id: number) => void;
+}> = ({ version, onEdit }) => {
+  const theme = useTheme();
+  const { pageNames } = useContext(PageContext);
+  const [widgets, setWidgets] = useState<{ id: number; page: string }[]>([]);
+  const [note, setNote] = useState<string>();
+  const android = Platform.OS === "android";
+
+  useEffect(() => {
+    if (!android) {
+      return;
+    }
+    const load = () =>
+      getWidgets()
+        .then(setWidgets)
+        .catch(() => {});
+    load();
+    // A widget added from the launcher shows up when the app returns.
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        load();
+      }
+    });
+    return () => sub.remove();
+  }, [android, version]);
+
+  const add = async () => {
+    const ok = await requestPinWidget().catch(() => false);
+    setNote(
+      ok
+        ? undefined
+        : "Lisää widget painamalla kotinäyttöä pitkään ja valitsemalla Widgetit → Teksti-TV.",
+    );
+  };
+
+  if (!android) {
+    return (
+      <Footnote text="Lisää widget painamalla kotinäyttöä pitkään ja valitsemalla Muokkaa → Lisää widget → Teksti-TV. Widgetin sivun voi vaihtaa painamalla widgettiä pitkään ja valitsemalla Muokkaa widgettiä. Widget päivittyy noin puolen tunnin välein ja aina, kun avaat sovelluksen." />
+    );
+  }
+
+  return (
+    <>
+      <Group>
+        {widgets.map((w, i) => (
+          <Row
+            key={w.id}
+            label={widgets.length > 1 ? `Widget ${i + 1}` : "Widgetin sivu"}
+            detail={[
+              w.page,
+              pageNames[w.page] && prettyTitle(pageNames[w.page]),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            onPress={() => onEdit(w.id)}
+          >
+            <Text style={{ color: theme.textMuted, fontSize: 15 }}>Vaihda</Text>
+          </Row>
+        ))}
+        <Row label="Lisää widget kotinäyttöön" onPress={add}>
+          <Icon name="add-circle-outline" size={20} color={theme.textMuted} />
+        </Row>
+      </Group>
+      <Footnote
+        text={
+          note ??
+          "Widget näyttää valitun sivun kotinäytössä, ja sen värinäppäimillä voi selata sivuja. Se päivittyy noin puolen tunnin välein ja aina, kun avaat sovelluksen."
+        }
+      />
+    </>
   );
 };
 

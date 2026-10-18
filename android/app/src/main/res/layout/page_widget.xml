@@ -47,6 +47,7 @@
             android:textColor="#FF8A8F98"
             android:textSize="11sp" />
 
+        <ImageView android:id="@+id/key_refresh" style="@style/WidgetKey" android:background="@drawable/widget_key_grey" android:src="@drawable/widget_refresh" android:contentDescription="@string/widget_refresh" />
         <ImageView android:id="@+id/key_prev_page" style="@style/WidgetKey" android:background="@drawable/widget_key_red" android:src="@drawable/widget_arrow_left" android:contentDescription="@string/widget_key_left" />
         <ImageView android:id="@+id/key_next_page" style="@style/WidgetKey" android:background="@drawable/widget_key_green" android:src="@drawable/widget_arrow_right" android:contentDescription="@string/widget_key_right" />
         <ImageView android:id="@+id/key_prev_sub" style="@style/WidgetKey" android:background="@drawable/widget_key_yellow" android:src="@drawable/widget_arrow_up" android:contentDescription="@string/widget_key_up" />
