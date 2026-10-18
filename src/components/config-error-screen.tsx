@@ -23,8 +23,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
-    height: "100%",
+    flex: 1,
+    width: "100%",
     padding: 24,
   },
   sadFace: {

@@ -56,6 +56,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
+  override func createRootViewController() -> UIViewController {
+    RootViewController()
+  }
+
   override func sourceURL(for bridge: RCTBridge) -> URL? {
     self.bundleURL()
   }
@@ -66,5 +70,21 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 #else
     Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
+  }
+}
+
+// Status bar style and visibility are view-controller based from iOS 27 on
+// (UIApplication's status bar setters are no-ops), so the root controller
+// decides: light content, hidden in landscape.
+class RootViewController: UIViewController {
+  override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+
+  override var prefersStatusBarHidden: Bool {
+    view.bounds.width > view.bounds.height
+  }
+
+  override func viewDidLayoutSubviews() {
+    super.viewDidLayoutSubviews()
+    setNeedsStatusBarAppearanceUpdate()
   }
 }

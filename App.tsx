@@ -9,7 +9,7 @@ import { AppStateProvider } from "./src/providers/app-state";
 import { NavigationStatusProvider } from "./src/providers/navigation-status";
 import { DeveloperPage } from "./src/components/developer-page";
 import { WindowProvider } from "./src/providers/window";
-import { Platform, SafeAreaView, StatusBar, View } from "react-native";
+import { StatusBar, View } from "react-native";
 import {
   createStackNavigator,
   StackNavigationProp,
@@ -31,7 +31,7 @@ const App: FC = () => {
   // Check environment variables before rendering the app
   if (!hasValidEnvVariables()) {
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#000000" }}>
         <SafeAreaProvider>
           <ConfigErrorScreen />
         </SafeAreaProvider>
@@ -84,8 +84,10 @@ const Navigator: FC = () => {
           style={{
             flex: 1,
             backgroundColor: "black",
-            paddingTop: Platform.OS === "android" ? insets?.top || 0 : 0,
-            paddingBottom: Platform.OS === "android" ? insets?.bottom || 0 : 0,
+            paddingTop: insets?.top || 0,
+            paddingBottom: insets?.bottom || 0,
+            paddingLeft: insets?.left || 0,
+            paddingRight: insets?.right || 0,
           }}>
           <StatusBar barStyle={"light-content"} backgroundColor="#000000" />
           <Stack.Navigator initialRouteName="Home" detachInactiveScreens>

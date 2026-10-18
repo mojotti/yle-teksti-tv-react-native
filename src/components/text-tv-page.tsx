@@ -58,14 +58,6 @@ export const TextTVPage: React.FunctionComponent<TextTvPageProps> = (props) => {
     [settings.screenRatio, viewHeight, pageWidth, isLandscape],
   );
 
-  console.log({
-    isLoading,
-    hasUnknownError,
-    isLoadingImg,
-    isLoadingPageData,
-    viewHeight,
-  });
-
   return (
     <View
       style={styles.container}
