@@ -9,7 +9,7 @@ describe("loadSettings", () => {
     expect(s).toEqual(defaultSettings);
     expect(s.theme).toBe("glass");
     expect(s.showSubpageRow).toBe(false);
-    expect(s.pageLinks).toBe(false);
+    expect(s.pageLinks).toBe(true);
     expect(s.dockContent).toBe("both");
   });
 
@@ -24,20 +24,30 @@ describe("loadSettings", () => {
       }),
     );
     const s = await loadSettings();
-    expect(s.pageLinks).toBe(false);
+    expect(s.pageLinks).toBe(true);
     expect(s.showSubpageRow).toBe(false);
     expect(s.dockContent).toBe("favorites");
-    expect(s.version).toBe(2);
+    expect(s.version).toBe(3);
     expect("favoritesReplaceLinks" in s).toBe(false);
   });
 
-  it("keeps choices made after version 2", async () => {
+  it("turns page-number links back on for version 2 settings", async () => {
     await AsyncStorage.setItem(
       "@settings",
-      JSON.stringify({ version: 2, pageLinks: true, showSubpageRow: true }),
+      JSON.stringify({ version: 2, pageLinks: false, showSubpageRow: true }),
     );
     const s = await loadSettings();
     expect(s.pageLinks).toBe(true);
+    expect(s.showSubpageRow).toBe(true);
+  });
+
+  it("keeps choices made after version 3", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 3, pageLinks: false, showSubpageRow: true }),
+    );
+    const s = await loadSettings();
+    expect(s.pageLinks).toBe(false);
     expect(s.showSubpageRow).toBe(true);
   });
 

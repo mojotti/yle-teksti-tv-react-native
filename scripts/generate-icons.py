@@ -1,138 +1,302 @@
 #!/usr/bin/env python3
-"""Generate the app icon for iOS and Android ("Lasi" design with glowing keys).
+"""Generate the app icon for iOS and Android.
 
-A miniature of teletext page 100 in glass style: a blue header with a white
-title block and "Teksti-TV" bar, a cyan band, two numbered headlines, and the
-four colour keys (red, green, yellow, cyan) as glossy, softly glowing buttons
-on a dark strip.
-Everything is drawn on a 24-unit grid with scripts/icon_shapes.py.
+The icon is page 100 as people know it (blue header, cyan strip, black middle,
+green index block), drawn with Yle's own teletext glyphs and lit like a CRT:
+phosphor glow on the text, slight colour fringing, scanlines and curved glass.
 
-Usage: python3 scripts/generate-icons.py   (run from the repo root)
+The glyph bitmaps in scripts/teletext-glyphs.json were taken from Yle's
+rendered page images (18 x 18 px cells).
+
+Android gets a two-layer adaptive icon: the colour bands in the back, the
+glowing text, mark and glass highlight in front, so launchers can move them
+apart. The themed (monochrome) layer is the "t" mark on its own.
+
+Usage (from the repo root; needs numpy and Pillow):
+    python3 -m pip install numpy pillow
+    python3 scripts/generate-icons.py            # both platforms
+    python3 scripts/generate-icons.py android    # or just one
+    python3 scripts/generate-icons.py preview out/   # preview images only
 """
 import json
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from icon_shapes import grrect, render, rrect, write_png  # noqa: E402
+import numpy as np
+from PIL import Image, ImageDraw
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+with open(os.path.join(HERE, "teletext-glyphs.json")) as f:
+    GLYPHS = {k: np.array([[c == "#" for c in row] for row in v]) for k, v in json.load(f).items()}
 
-WHITE = (255, 255, 255)
-RED = (255, 59, 59)
-GREEN = (47, 224, 106)
-YELLOW = (255, 226, 61)
-CYAN = (57, 227, 255)
-BLUE = (47, 69, 255)
-DARK = (4, 5, 10)
+BLUE = (22, 42, 250)
+CYAN = (40, 228, 255)
+GREEN = (36, 236, 70)
+WHITE = (250, 250, 250)
+YELLOW = (255, 232, 36)
 
-
-def lighter(c, f):
-    return tuple(int(v + (255 - v) * f) for v in c)
-
-
-def darker(c, f):
-    return tuple(int(v * (1 - f)) for v in c)
-
-
-# Each part is (kind, shape). "band" parts span the full width; the rest are
-# details that must stay inside Android's circular safe zone. "glow" parts
-# are the soft halos around the white details and keys.
-def halo(x, y, w, h, r, c, spread, strength):
-    """A soft glow: many faint, growing outlines of a shape's colour under it.
-    Enough rings that the fade looks smooth even at 1024 px."""
-    steps = 24
-    alpha = max(1, round(strength / steps))
-    return [
-        ("glow", rrect(x - e, y - e, w + 2 * e, h + 2 * e, r + e, c + (alpha,)))
-        for e in (spread * i / steps for i in range(steps, 0, -1))
-    ]
+# The "t:" mark from Yle's section pages, in sixels (each 1.5 wide : 1 tall).
+T_MARK = [
+    ".##..",
+    "#####",
+    "#####",
+    ".##..",
+    ".##.#",
+    ".##..",
+    ".####",
+    ".####",
+]
 
 
-def white(x, y, w, h, r, spread):
-    return halo(x, y, w, h, r, WHITE, spread, 78) + [("mark", rrect(x, y, w, h, r, WHITE))]
+# ---------------------------------------------------------------- the page
+
+class Scene:
+    """Shapes in window units (0..1 is the visible icon), on a back or front layer."""
+
+    def __init__(self):
+        self.items = []
+
+    def rect(self, box, colour):
+        self.items.append(dict(layer="back", box=box, mask=None, colour=colour, heat=0.0, glow=0.0))
+
+    def bits(self, x, y, w, h, mask, colour, heat=0.0, glow=1.0):
+        self.items.append(dict(layer="front", box=(x, y, x + w, y + h), mask=mask, colour=colour, heat=heat, glow=glow))
+
+    def text(self, x, y, s, cw, colour, tall=1, glow=1.0):
+        """Teletext text: square cells cw wide (tall=2 for double height)."""
+        for i, c in enumerate(s):
+            if c != " ":
+                self.bits(x + i * cw, y, cw, cw * tall, GLYPHS[c], colour, glow=glow)
+        return x + len(s) * cw
 
 
-def design():
-    parts = [
-        ("band", grrect(0, 0, 24, 24, 0, (24, 28, 44), DARK)),
-        ("band", grrect(0, 0, 24, 6.2, 0, (84, 104, 255), (36, 54, 230))),
-    ]
-    parts += white(3.2, 1.6, 7.44, 2.88, 0.6, 0.45)
-    parts += white(11.72, 2.46, 9.08, 1.21, 0.18, 0.45)
-    parts += [
-        ("band", grrect(0, 6.2, 24, 1.9, 0, (120, 238, 255), (40, 200, 240))),
-        ("mark", rrect(3.2, 6.7, 8.5, 0.9, 0.3, BLUE)),
-    ]
-    for y, w in ((10.3, 17.6), (13.2, 13)):
-        parts += white(3.2, y, 2.85, 1.5, 0.75, 0.35)
-        parts += white(6.65, y, w - 3.45, 1.5, 0.75, 0.35)
-    parts.append(("band", grrect(0, 17.6, 24, 6.4, 0, (14, 15, 22), (4, 4, 8))))
-    kw = (18.8 - 3 * 0.8) / 4
-    for i, c in enumerate((RED, GREEN, YELLOW, CYAN)):
-        x = 2.6 + i * (kw + 0.8)
-        parts += halo(x, 19.0, kw, 3.2, 1.0, c, 1.3, 144)
-        parts += [
-            ("key", grrect(x, 19.0, kw, 3.2, 1.0, lighter(c, 0.3), darker(c, 0.15))),
-            # Glass highlight on the upper part of each key.
-            ("shine", rrect(x + kw * 0.12, 19.32, kw * 0.76, 0.96, 0.48, WHITE + (110,))),
-        ]
-    return parts
+def page(layout):
+    """layout "ios" fills the square; "android" pulls the content in to fit the
+    circular safe zone and centres it."""
+    android = layout == "android"
+    s = Scene()
+    hb, cb, gb = 0.34, 0.415, 0.76
+    s.rect((-1, -1, 2, hb), BLUE)
+    s.rect((-1, hb, 2, cb), CYAN)
+    s.rect((-1, gb, 2, 2), GREEN)
+    k = 0.80 if android else 1.0
+
+    def left(chars, cw):
+        return 0.5 - chars * cw / 2 if android else 0.07
+
+    # Header: the mark and a double-height "Teksti-TV".
+    mh = 0.235 * k
+    mch = mh / 8
+    mcw = mch * 1.5
+    tw = 0.068 * k
+    gap = 0.035 * k
+    total = 5 * mcw + gap + 9 * tw
+    hx = 0.5 - total / 2 if android else 0.07
+    hy = (hb + 0.012) / 2 + (0.03 if android else 0)
+    s.bits(hx, hy - mh / 2, 5 * mcw, mh, np.array([[c == "#" for c in r] for r in T_MARK]), WHITE, heat=0.6, glow=0.6)
+    s.text(hx + 5 * mcw + gap, hy - tw, "Teksti-TV", tw, WHITE, tall=2, glow=0.5)
+    # Cyan strip.
+    sw = 0.058 * k
+    s.text(left(13, sw), hb + (cb - hb - sw) / 2, "100 HAKEMISTO", sw, BLUE, glow=0)
+    # Sections, yellow numbers and white names.
+    rw = 0.078 * k
+    for j, (num, name) in enumerate((("101", "Uutiset"), ("201", "Urheilu"))):
+        y = cb + (gb - cb) * (0.27 + 0.48 * j) - rw / 2
+        x = s.text(left(11, rw), y, num + " ", rw, YELLOW)
+        s.text(x, y, name, rw, WHITE)
+    # Green index block in blue.
+    iw = 0.05 * k
+    for j, line in enumerate(("300 OHJELMAT  470", "160 TALOUS    575")):
+        s.text(left(11, rw), gb + 0.04 + j * iw * 1.15, line, iw, BLUE, glow=0)
+    return s
 
 
-def _move(shape, fx, fy, fs):
-    """Maps a shape's geometry with x' = fx(x), y' = fy(y) and radii times fs."""
-    kind, x, y, w, h, r, c = shape
-    x0, y0 = fx(x), fy(y)
-    return (kind, x0, y0, fx(x + w) - x0, fy(y + h) - y0, r * fs, c)
+# ---------------------------------------------------------------- rendering
+
+def blur(a, sigma):
+    """Gaussian blur through the FFT, zero-padded so glow doesn't wrap round."""
+    if sigma < 0.3:
+        return a
+    flat = a.ndim == 2
+    if flat:
+        a = a[..., None]
+    h, w = a.shape[:2]
+    p = int(min(3 * sigma, max(h, w)))
+    big = np.zeros((h + 2 * p, w + 2 * p, a.shape[2]))
+    big[p:p + h, p:p + w] = a
+    fy = np.fft.fftfreq(big.shape[0])[:, None]
+    fx = np.fft.rfftfreq(big.shape[1])[None, :]
+    g = np.exp(-2 * (np.pi * sigma) ** 2 * (fx ** 2 + fy ** 2))
+    out = np.stack([np.fft.irfft2(np.fft.rfft2(big[..., c]) * g, s=big.shape[:2]) for c in range(a.shape[2])], -1)
+    out = out[p:p + h, p:p + w]
+    return out[..., 0] if flat else out
 
 
-# Android adaptive icons show the middle two-thirds of the layer, masked to a
-# circle, squircle etc. Details shrink towards the centre to stay inside the
-# circle; full-width bands keep reaching the edges. The circle mask is 66 of
-# 108 dp (radius 7.33 units); the farthest corners (title block, keys) sit about
-# 13.9 units from the centre, so 0.52 keeps them inside.
-ANDROID_SCALE = 0.52
+def smooth(e0, e1, v):
+    t = np.clip((v - e0) / (e1 - e0), 0, 1)
+    return t * t * (3 - 2 * t)
 
 
-def android_parts():
-    def s(v):
-        return 12 + (v - 12) * ANDROID_SCALE
-
-    def band_y(v):
-        return v if v <= 0 or v >= 24 else s(v)
-
-    out = []
-    for kind, shape in design():
-        if kind == "band":
-            out.append((kind, _move(shape, lambda v: v, band_y, 1)))
-        else:
-            out.append((kind, _move(shape, s, s, ANDROID_SCALE)))
-    return out
+def down(a, ss):
+    h, w = a.shape[0] // ss, a.shape[1] // ss
+    return a.reshape(h, ss, w, ss, *a.shape[2:]).mean(axis=(1, 3))
 
 
-def shapes(parts):
-    return [shape for _, shape in parts]
+def sample(img, sx, sy):
+    """Bilinear lookup at fractional pixel positions."""
+    h, w = img.shape[:2]
+    sx = np.clip(sx, 0, w - 1.001)
+    sy = np.clip(sy, 0, h - 1.001)
+    x0, y0 = sx.astype(int), sy.astype(int)
+    fx, fy = sx - x0, sy - y0
+    if img.ndim == 3:
+        fx, fy = fx[..., None], fy[..., None]
+    return (img[y0, x0] * (1 - fx) * (1 - fy) + img[y0, x0 + 1] * fx * (1 - fy)
+            + img[y0 + 1, x0] * (1 - fx) * fy + img[y0 + 1, x0 + 1] * fx * fy)
+
+
+CURVE = 0.07     # how much the tube face bulges
+FRINGE = 0.0035  # red/blue beam misalignment, in window units
+
+
+def render(scene, px, view=(0.0, 1.0), ss=3):
+    """Renders the window range `view` (same on both axes) into px x px.
+
+    Returns (back, front, front_alpha) as float arrays: the opaque band layer,
+    and the front layer's colour and coverage (text, mark, glow, glass)."""
+    u0, u1 = view
+    span = u1 - u0
+    pw = px / span                      # pixels per window unit
+    m = 0.25                            # drawn margin beyond the view, for the lens
+    n_draw = int(round((span + 2 * m) * pw * ss))
+    org = u0 - m
+
+    def to_px(u):
+        return (u - org) * pw * ss
+
+    keys = ("back", "front", "heat", "alpha", "glow")
+    canv = {k: Image.new("RGB" if k in ("back", "front", "glow") else "L", (n_draw, n_draw)) for k in keys}
+    draw = {k: ImageDraw.Draw(v) for k, v in canv.items()}
+    for it in scene.items:
+        x0, y0, x1, y1 = (to_px(v) for v in it["box"])
+        X0, Y0 = int(round(x0)), int(round(y0))
+        W, H = max(1, int(round(x1)) - X0), max(1, int(round(y1)) - Y0)
+        if it["layer"] == "back":
+            draw["back"].rectangle((X0, Y0, X0 + W - 1, Y0 + H - 1), fill=it["colour"])
+            continue
+        mk = Image.fromarray((it["mask"] * 255).astype(np.uint8)).resize((W, H), Image.NEAREST)
+        box = (X0, Y0, X0 + W, Y0 + H)
+        canv["front"].paste(it["colour"], box, mk)
+        canv["heat"].paste(int(255 * it["heat"]), box, mk)
+        canv["alpha"].paste(255, box, mk)
+        canv["glow"].paste(tuple(int(c * it["glow"]) for c in it["colour"]), box, mk)
+    arr = {k: np.asarray(v, float) for k, v in canv.items()}
+    arr["heat"] /= 255
+    arr["alpha"] /= 255
+
+    # Look through the bulging glass: window coords of each output (supersampled) pixel.
+    n = px * ss
+    g = (np.arange(n) + 0.5) / n * span + u0
+    U, V = np.meshgrid(g, g)
+    nx, ny = U * 2 - 1, V * 2 - 1
+    f = 1 + CURVE * (np.minimum(nx * nx + ny * ny, 2.2) - 0.6)
+    su, sv = (nx * f + 1) / 2, (ny * f + 1) / 2
+
+    def look(a, du=0.0):
+        return down(sample(a, to_px(su + du) - 0.5, to_px(sv) - 0.5), ss)
+
+    back = look(arr["back"])
+    heat = look(arr["heat"])
+    alpha = look(arr["alpha"])
+    glowsrc = look(arr["glow"])
+    # Colour fringing: red lands a touch left, blue a touch right.
+    front = np.stack([look(arr["front"][..., 0], -FRINGE), look(arr["front"][..., 1]),
+                      look(arr["front"][..., 2], FRINGE)], -1)
+    alpha = np.maximum(alpha, np.maximum(look(arr["alpha"], -FRINGE), look(arr["alpha"], FRINGE)) * 0.7)
+    # The canvas is black outside the text, so sampled colour is premultiplied.
+    front = np.clip(front / np.maximum(alpha, 1e-6)[..., None], 0, 255)
+
+    wpx = pw                                   # visible window size in pixels
+    V, U = (np.mgrid[0:px, 0:px] + 0.5) / px * span + u0
+    nx, ny = U * 2 - 1, V * 2 - 1
+
+    # Phosphor: the thick mark burns towards white in its middle.
+    core = blur(alpha, wpx * 0.05) * heat
+    front = front + (255 - front) * smooth(0.55, 0.95, core)[..., None] * 0.55
+    # Scanlines (fewer on small icons so they never shimmer), aperture grille when big.
+    lines = min(112, wpx / 4.5)
+    amp = 0.26 * smooth(18, 40, lines)
+    scan = 1 - amp * (np.cos(V * lines * 2 * np.pi) * 0.5 + 0.5) ** 2
+    texture = scan[..., None]
+    if wpx >= 512:
+        col = np.arange(px)[None, :] // 2
+        grille = np.stack([0.91 + 0.27 * ((col + c) % 3 == 0) for c in range(3)], -1)
+        texture = texture * grille
+    back = back * texture
+    front = front * texture
+
+    # Bloom from what should glow (text, mark), and a faint halo off the bands.
+    glow = (blur(glowsrc, wpx * 0.004) * 0.55 + blur(glowsrc, wpx * 0.014) * 0.45
+            + blur(glowsrc, wpx * 0.045) * 0.30 + blur(glowsrc, wpx * 0.12) * 0.18)
+    back = back + blur(back, wpx * 0.02) * 0.10 + blur(back, wpx * 0.08) * 0.08
+
+    # The tube's convex edges fall off into shadow.
+    edge = (1 - 0.6 * smooth(0.25, 1.7, np.abs(nx) ** 5 + np.abs(ny) ** 5))[..., None]
+    back, front, glow = back * edge, front * edge, glow * edge
+
+    # Glass: a top reflection with a curved lower edge, and a faint diagonal sheen.
+    lower = 0.43 - 0.12 * nx ** 2
+    top = smooth(lower + 0.008, lower - 0.008, V) * np.clip(1 - V / 0.5, 0, 1) ** 1.5 * smooth(1.0, 0.86, np.abs(nx))
+    d = U + V * 0.55
+    sheen = smooth(0.70, 0.78, d) * smooth(0.98, 0.86, d)
+    light = (0.07 * top + 0.035 * sheen) * 255
+
+    # Front layer: solid where the text is, plus glow and glass as light.
+    add = glow + light[..., None]
+    add_a = np.clip(add.max(-1) / 255, 0, 1)
+    fa = alpha + (1 - alpha) * add_a
+    fc = (front * alpha[..., None] + add * (1 - alpha[..., None])) / np.maximum(fa, 1e-6)[..., None]
+    return back, fc, fa
+
+
+def tone(a):
+    """Soft shoulder instead of hard clipping, plus a little grain."""
+    a = a + np.random.default_rng(7).normal(0, 1.0, a.shape[:2] + (1,))
+    a = np.where(a > 205, 205 + 50 * np.tanh((a - 205) / 50), a)
+    return np.clip(a, 0, 255)
+
+
+def flat(scene, px, view=(0.0, 1.0)):
+    back, fc, fa = render(scene, px, view)
+    return Image.fromarray(tone(back * (1 - fa[..., None]) + fc * fa[..., None]).astype(np.uint8))
+
+
+def layers(scene, px, view):
+    back, fc, fa = render(scene, px, view)
+    bg = Image.fromarray(tone(back).astype(np.uint8))
+    fg = np.concatenate([tone(fc), np.clip(fa * 255, 0, 255)[..., None]], -1)
+    return bg, Image.fromarray(fg.astype(np.uint8))
 
 
 def grayscale(img):
-    return [[(int(0.3 * r + 0.59 * g + 0.11 * b),) * 3 + (a,) for r, g, b, a in row] for row in img]
+    return img.convert("L").convert("RGB")
 
 
-def rrect_path(x, y, w, h, r):
-    """SVG path data for a rounded rectangle."""
-    r = min(r, w / 2, h / 2)
-    return (
-        "M%.3f,%.3fh%.3fa%.3f,%.3f 0 0 1 %.3f,%.3fv%.3fa%.3f,%.3f 0 0 1 %.3f,%.3f"
-        "h%.3fa%.3f,%.3f 0 0 1 %.3f,%.3fv%.3fa%.3f,%.3f 0 0 1 %.3f,%.3fz"
-        % (
-            x + r, y, w - 2 * r, r, r, r, r,
-            h - 2 * r, r, r, -r, r,
-            -(w - 2 * r), r, r, -r, -r,
-            -(h - 2 * r), r, r, r, -r,
-        )
-    )
+def masked(img, shape):
+    size = img.size[0]
+    m = Image.new("L", (size * 4, size * 4))
+    d = ImageDraw.Draw(m)
+    if shape == "circle":
+        d.ellipse((0, 0, size * 4 - 1, size * 4 - 1), fill=255)
+    else:
+        d.rounded_rectangle((0, 0, size * 4 - 1, size * 4 - 1), int(size * 4 * shape), fill=255)
+    out = img.convert("RGBA")
+    out.putalpha(m.resize((size, size), Image.LANCZOS))
+    return out
 
+
+# ---------------------------------------------------------------- outputs
 
 def write(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -140,97 +304,115 @@ def write(path, text):
         f.write(text)
 
 
-def vector(paths, path):
-    body = "\n".join('    <path android:fillColor="%s" android:pathData="%s"/>' % p for p in paths)
-    write(
-        path,
-        '<?xml version="1.0" encoding="utf-8"?>\n'
-        "<!-- Generated by scripts/generate-icons.py -->\n"
-        '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
-        '    android:width="108dp" android:height="108dp"\n'
-        '    android:viewportWidth="24" android:viewportHeight="24">\n' + body + "\n</vector>\n",
-    )
+def save(img, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    img.save(path, optimize=True)
 
 
 def ios():
     base = os.path.join(ROOT, "ios/TekstiTVReactNativeApp/Images.xcassets/AppIcon.appiconset")
-    img = render(shapes(design()), 1024, ss=2)
-    write_png(os.path.join(base, "AppIcon-1024.png"), img, alpha=False)
-    write_png(os.path.join(base, "AppIcon-1024-tinted.png"), grayscale(img), alpha=False)
+    img = flat(page("ios"), 1024)
+    save(img, os.path.join(base, "AppIcon-1024.png"))
+    save(grayscale(img), os.path.join(base, "AppIcon-1024-tinted.png"))
     contents = {
         "images": [
             {"filename": "AppIcon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
-            {
-                "appearances": [{"appearance": "luminosity", "value": "dark"}],
-                "filename": "AppIcon-1024.png",
-                "idiom": "universal",
-                "platform": "ios",
-                "size": "1024x1024",
-            },
-            {
-                "appearances": [{"appearance": "luminosity", "value": "tinted"}],
-                "filename": "AppIcon-1024-tinted.png",
-                "idiom": "universal",
-                "platform": "ios",
-                "size": "1024x1024",
-            },
+            {"appearances": [{"appearance": "luminosity", "value": "dark"}],
+             "filename": "AppIcon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
+            {"appearances": [{"appearance": "luminosity", "value": "tinted"}],
+             "filename": "AppIcon-1024-tinted.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"},
         ],
         "info": {"author": "xcode", "version": 1},
     }
     write(os.path.join(base, "Contents.json"), json.dumps(contents, indent=2) + "\n")
 
 
+# An adaptive icon layer is 108 dp; launchers show the middle 72 dp.
+ANDROID_VIEW = (-18 / 72, 1 + 18 / 72)
 DENSITIES = (("mdpi", 1), ("hdpi", 1.5), ("xhdpi", 2), ("xxhdpi", 3), ("xxxhdpi", 4))
+
+
+def monochrome_xml():
+    """Themed-icon layer: the t mark, centred, in the 24-unit 108 dp viewport."""
+    h = 0.46                     # of the visible window
+    ch = h / 8
+    cw = ch * 1.5
+    x0, y0 = 0.5 - 2.5 * cw, 0.5 - h / 2
+
+    def unit(u):
+        return 4 + u * 16
+
+    paths = []
+    for j, row in enumerate(T_MARK):
+        i = 0
+        while i < len(row):
+            if row[i] == "#":
+                k = i
+                while k < len(row) and row[k] == "#":
+                    k += 1
+                a, b = unit(x0 + i * cw), unit(x0 + k * cw)
+                c, d = unit(y0 + j * ch), unit(y0 + (j + 1) * ch)
+                paths.append("M%.3f,%.3fH%.3fV%.3fH%.3fZ" % (a, c, b, d, a))
+                i = k
+            else:
+                i += 1
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        "<!-- Generated by scripts/generate-icons.py -->\n"
+        '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+        '    android:width="108dp" android:height="108dp"\n'
+        '    android:viewportWidth="24" android:viewportHeight="24">\n'
+        '    <path android:fillColor="#FFFFFFFF" android:pathData="%s"/>\n'
+        "</vector>\n" % "".join(paths)
+    )
 
 
 def android():
     res = os.path.join(ROOT, "android/app/src/main/res")
-    parts = android_parts()
-    art = shapes(parts)
-
-    # Adaptive icon: the art as a bitmap foreground over a plain dark layer,
-    # plus a white monochrome layer (themed icons) from the white details and keys.
+    scene = page("android")
     for folder, scale in DENSITIES:
-        write_png(
-            os.path.join(res, "mipmap-" + folder, "ic_launcher_foreground.png"),
-            render(art, int(108 * scale), ss=3),
-            alpha=False,
-        )
-    vector([("#FF04050A", "M0,0h24v24h-24z")], os.path.join(res, "drawable/ic_launcher_background_layer.xml"))
-    mono = [
-        ("#FFFFFFFF", rrect_path(*shape[1:6]))
-        for kind, shape in parts
-        if kind == "key" or (kind == "mark" and shape[6] == WHITE)
-    ]
-    vector(mono, os.path.join(res, "drawable/ic_launcher_monochrome_layer.xml"))
-    old = os.path.join(res, "drawable/ic_launcher_foreground_layer.xml")
+        bg, fg = layers(scene, int(108 * scale), ANDROID_VIEW)
+        save(bg, os.path.join(res, "mipmap-" + folder, "ic_launcher_background.png"))
+        save(fg, os.path.join(res, "mipmap-" + folder, "ic_launcher_foreground.png"))
+    write(os.path.join(res, "drawable/ic_launcher_monochrome_layer.xml"), monochrome_xml())
+    old = os.path.join(res, "drawable/ic_launcher_background_layer.xml")
     if os.path.exists(old):
         os.remove(old)
     adaptive = (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
-        '    <background android:drawable="@drawable/ic_launcher_background_layer"/>\n'
+        '    <background android:drawable="@mipmap/ic_launcher_background"/>\n'
         '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n'
         '    <monochrome android:drawable="@drawable/ic_launcher_monochrome_layer"/>\n'
         "</adaptive-icon>\n"
     )
     for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
         write(os.path.join(res, "mipmap-anydpi-v26", name), adaptive)
-
-    # Legacy bitmaps for Android < 8: the visible middle of the adaptive art
-    # (units 4..20) scaled up, so they match what launchers show.
-    def legacy(v):
-        return (v - 4) * 1.5
-
-    full = [_move(shape, legacy, legacy, 1.5) for shape in art]
+    # Legacy icons for Android < 8: the visible window, pre-shaped.
     for folder, px in (("ldpi", 36), ("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
+        img = flat(scene, px)
         d = os.path.join(res, "mipmap-" + folder)
-        write_png(os.path.join(d, "ic_launcher.png"), render(full, px, ss=4))
-        write_png(os.path.join(d, "ic_launcher_round.png"), render(full, px, ss=4, mask_circle=True))
-    write_png(os.path.join(res, "playstore-icon.png"), render(shapes(design()), 512, ss=3), alpha=False)
+        save(masked(img, 0.16), os.path.join(d, "ic_launcher.png"))
+        save(masked(img, "circle"), os.path.join(d, "ic_launcher_round.png"))
+    save(flat(page("ios"), 512), os.path.join(res, "playstore-icon.png"))
+
+
+def preview(out):
+    os.makedirs(out, exist_ok=True)
+    flat(page("ios"), 1024).save(os.path.join(out, "ios.png"))
+    bg, fg = layers(page("android"), 432, ANDROID_VIEW)
+    bg.save(os.path.join(out, "android-back.png"))
+    fg.save(os.path.join(out, "android-front.png"))
+    Image.alpha_composite(bg.convert("RGBA"), fg).save(os.path.join(out, "android-layer.png"))
 
 
 if __name__ == "__main__":
-    ios()
-    android()
-    print("icons written")
+    args = sys.argv[1:] or ["ios", "android"]
+    if args[0] == "preview":
+        preview(args[1] if len(args) > 1 else "icon-preview")
+    else:
+        if "ios" in args:
+            ios()
+        if "android" in args:
+            android()
+    print("done")

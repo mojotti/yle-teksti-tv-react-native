@@ -52,31 +52,34 @@ export const defaultSettings: Settings = {
   ambientGlow: true,
   screenRatio: "tall",
   swipe: "pagesHorizontal",
-  pageLinks: false,
+  pageLinks: true,
   highlightScreenLinks: false,
   showDock: true,
   showSubpageRow: false,
   orientationLock: "auto",
   offlineAutoDownload: false,
   onboardingDone: false,
-  version: 2,
+  version: 3,
 };
 
 /**
- * Brings stored settings up to date. Version 2: page-number links and the
- * subpage row are off by default; "favoritesReplaceLinks" became
- * dockContent.
+ * Brings stored settings up to date. Version 2: the subpage row is off by
+ * default and "favoritesReplaceLinks" became dockContent. Version 3:
+ * page-number links are on again (version 2 had briefly turned them off).
  */
 export const migrate = (stored: Record<string, unknown>): Settings => {
   const s = { ...defaultSettings, ...stored } as Settings & {
     favoritesReplaceLinks?: boolean;
   };
-  if (!stored.version || (stored.version as number) < 2) {
-    s.pageLinks = false;
+  const version = (stored.version as number | undefined) ?? 1;
+  if (version < 2) {
     s.showSubpageRow = false;
     s.dockContent = s.favoritesReplaceLinks ? "favorites" : "both";
-    s.version = 2;
   }
+  if (version < 3) {
+    s.pageLinks = true;
+  }
+  s.version = defaultSettings.version;
   delete s.favoritesReplaceLinks;
   return s;
 };
