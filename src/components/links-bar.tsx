@@ -19,7 +19,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
 
 import { infoAreaColor, lightGray, linkColor } from "../utils/colors";
 import { getLinkPages } from "../utils";
@@ -127,7 +126,8 @@ const UnmemoizedLinksBar: FunctionComponent<{
                   }),
                 },
               ],
-            }}>
+            }}
+          >
             {hasFavorites ? "Suosikkisivut" : "Sivun linkit"}
           </Animated.Text>
         </View>
@@ -139,18 +139,16 @@ const UnmemoizedLinksBar: FunctionComponent<{
         setScrollView={setScrollView}
         setMenuWidth={setMenuWidth}
         hasFavorites={hasFavorites}
-        width={screenWidth}>
+        width={screenWidth}
+      >
         {links.map((link) => (
           <TouchableOpacity key={link} onPress={() => props.onPageChange(link)}>
-            <LinearGradient
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              locations={[0, 0.97]}
-              colors={["#2b5876", "#4e4376"]}
+            <View
               style={{
                 ...styles.linkContainer,
                 marginVertical: isLandscape ? 10 : 0,
-              }}>
+              }}
+            >
               {hasFavorites && settings.favoriteIcon !== "none" && (
                 <Icon
                   style={styles.icon}
@@ -172,10 +170,11 @@ const UnmemoizedLinksBar: FunctionComponent<{
                       : fontSizeLarge,
                   opacity: scaleAnim,
                   transform: [{ scale: scaleAnim }],
-                }}>
+                }}
+              >
                 {link}
               </Animated.Text>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollContainer>
@@ -214,7 +213,8 @@ const ScrollContainer: FC<
             width: "100%",
             flex: 1,
             flexDirection: "column",
-          }}>
+          }}
+        >
           <Menu isLandscape={isLandscape} setMenuWidth={setMenuWidth} />
           {isLandscape && (
             <View style={styles.headerContainerLandscape}>
@@ -234,7 +234,8 @@ const ScrollContainer: FC<
               flexDirection: "column",
             }}
             showsVerticalScrollIndicator
-            ref={(ref) => setScrollView(ref || undefined)}>
+            ref={(ref) => setScrollView(ref || undefined)}
+          >
             {children}
           </ScrollView>
         </View>
@@ -247,7 +248,8 @@ const ScrollContainer: FC<
             flexDirection: "row",
             paddingVertical: 10,
             width,
-          }}>
+          }}
+        >
           <ScrollView
             horizontal
             ref={(ref) => setScrollView(ref || undefined)}
@@ -271,7 +273,8 @@ const ScrollContainer: FC<
               ],
               { useNativeDriver: false },
             )}
-            scrollEventThrottle={10}>
+            scrollEventThrottle={10}
+          >
             {children}
           </ScrollView>
           <Menu isLandscape={isLandscape} setMenuWidth={setMenuWidth} />
@@ -301,7 +304,8 @@ const Menu: FC<{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-      }}>
+      }}
+    >
       <Icon
         style={{
           ...styles.menu,
@@ -339,6 +343,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexDirection: "row",
     backgroundColor: linkColor,
+    experimental_backgroundImage:
+      "linear-gradient(to right, #2b5876 0%, #4e4376 97%)",
     borderRadius: 10,
     overflow: "hidden",
     marginHorizontal: 10,

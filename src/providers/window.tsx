@@ -3,20 +3,13 @@ import React, {
   FunctionComponent,
   PropsWithChildren,
   useEffect,
-  useState,
 } from "react";
-import { Dimensions, ScaledSize, StatusBar } from "react-native";
-
-const getOrientation = (screen: ScaledSize) => {
-  if (screen.height > screen.width) {
-    return OrientationTypes.Portrait;
-  }
-
-  return OrientationTypes.Landscape;
-};
-
-const window = Dimensions.get("window");
-const screen = Dimensions.get("screen");
+import {
+  Dimensions,
+  ScaledSize,
+  StatusBar,
+  useWindowDimensions,
+} from "react-native";
 
 export enum OrientationTypes {
   Landscape = "landscape",
@@ -29,40 +22,28 @@ interface WindowType {
   applicationWindow: ScaledSize;
 }
 
-type DimensionsType = { window: ScaledSize; screen: ScaledSize };
-
 export const WindowContext = createContext({} as WindowType);
 
+// Orientation follows the app window, not the device screen: with the
+// UIScene life cycle the window can be resized independently of the screen.
 export const WindowProvider: FunctionComponent<PropsWithChildren> = (props) => {
-  const [orientation, setOrientation] = useState<OrientationTypes>(
-    getOrientation(screen),
-  );
+  const applicationWindow = useWindowDimensions();
 
-  const [dimensions, setDimensions] = useState<DimensionsType>({
-    window,
-    screen,
-  });
-
-  const onChange = ({ window: w, screen: s }: DimensionsType) => {
-    const newOrientation = getOrientation(s);
-
-    setOrientation(newOrientation);
-    setDimensions({ window: w, screen: s });
-
-    StatusBar.setHidden(orientation === OrientationTypes.Landscape);
-  };
+  const orientation =
+    applicationWindow.height > applicationWindow.width
+      ? OrientationTypes.Portrait
+      : OrientationTypes.Landscape;
 
   useEffect(() => {
-    Dimensions.addEventListener("change", onChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    StatusBar.setHidden(orientation === OrientationTypes.Landscape);
+  }, [orientation]);
 
   return (
     <WindowContext.Provider
       value={{
         orientation,
-        deviceScreen: dimensions.screen,
-        applicationWindow: dimensions.window,
+        deviceScreen: Dimensions.get("screen"),
+        applicationWindow,
       }}>
       {props.children}
     </WindowContext.Provider>

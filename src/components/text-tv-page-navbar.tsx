@@ -39,9 +39,7 @@ export const TextTvPageNavBar: React.FC<{
     NavigationStatusContext,
   );
 
-  const { applicationWindow, orientation } = useContext(WindowContext);
-
-  const { width } = applicationWindow;
+  const { orientation } = useContext(WindowContext);
 
   const isLoading = isLoadingImg || isLoadingPageData;
 
@@ -68,7 +66,7 @@ export const TextTvPageNavBar: React.FC<{
     <View
       style={{
         height: isLandscape ? "100%" : pageInfoHeight,
-        width: isLandscape ? pageInfoLandscapeWidth : width,
+        width: isLandscape ? pageInfoLandscapeWidth : "100%",
         backgroundColor: "black",
       }}>
       <NavBar
