@@ -49,7 +49,7 @@ export const defaultSettings: Settings = {
   dockContent: "both",
   startView: "front",
   theme: "glass",
-  ambientGlow: true,
+  ambientGlow: false,
   screenRatio: "tall",
   swipe: "pagesHorizontal",
   pageLinks: true,
@@ -59,7 +59,7 @@ export const defaultSettings: Settings = {
   orientationLock: "auto",
   offlineAutoDownload: false,
   onboardingDone: false,
-  version: 4,
+  version: 5,
 };
 
 /**
@@ -67,6 +67,7 @@ export const defaultSettings: Settings = {
  * default and "favoritesReplaceLinks" became dockContent. Version 3:
  * page-number links are on again (version 2 had briefly turned them off).
  * Version 4: favourite chips have no icon by default.
+ * Version 5: the background glow is off by default.
  */
 export const migrate = (stored: Record<string, unknown>): Settings => {
   const s = { ...defaultSettings, ...stored } as Settings & {
@@ -84,6 +85,10 @@ export const migrate = (stored: Record<string, unknown>): Settings => {
   // ever stored as the old default in redesign builds.
   if (version < 4 && s.favoriteIcon === "heart") {
     s.favoriteIcon = "none";
+  }
+  // Version 5: the background glow is off by default.
+  if (version < 5) {
+    s.ambientGlow = false;
   }
   s.version = defaultSettings.version;
   delete s.favoritesReplaceLinks;

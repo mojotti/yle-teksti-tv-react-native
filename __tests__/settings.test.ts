@@ -27,7 +27,7 @@ describe("loadSettings", () => {
     expect(s.pageLinks).toBe(true);
     expect(s.showSubpageRow).toBe(false);
     expect(s.dockContent).toBe("favorites");
-    expect(s.version).toBe(4);
+    expect(s.version).toBe(5);
     expect("favoritesReplaceLinks" in s).toBe(false);
   });
 
@@ -54,10 +54,15 @@ describe("loadSettings", () => {
     expect((await loadSettings()).favoriteIcon).toBe("star");
   });
 
-  it("keeps choices made after version 4", async () => {
+  it("keeps choices made after version 5", async () => {
     await AsyncStorage.setItem(
       "@settings",
-      JSON.stringify({ version: 4, pageLinks: false, showSubpageRow: true }),
+      JSON.stringify({
+        version: 5,
+        pageLinks: false,
+        showSubpageRow: true,
+        ambientGlow: true,
+      }),
     );
     const s = await loadSettings();
     expect(s.pageLinks).toBe(false);
