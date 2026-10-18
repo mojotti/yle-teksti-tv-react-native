@@ -273,6 +273,7 @@
 					"-ObjC",
 					"-lc++",
 				);
+				DEVELOPMENT_TEAM = 3GU5CUTF32;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.mojotti.teksti-tv-mobile";
 				PRODUCT_NAME = TekstiTVReactNativeApp;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -300,6 +301,7 @@
 					"-ObjC",
 					"-lc++",
 				);
+				DEVELOPMENT_TEAM = 3GU5CUTF32;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.mojotti.teksti-tv-mobile";
 				PRODUCT_NAME = TekstiTVReactNativeApp;
 				SWIFT_VERSION = 5.0;
