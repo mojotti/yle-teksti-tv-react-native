@@ -16,9 +16,10 @@ import { getPageImgSrc, getPageTitle } from "../../utils";
 import { TextTvResponse } from "../../types/response";
 import { tt, useTheme } from "../../theme/theme";
 import { getOfflinePage } from "../../utils/offline";
+import { cropFrame, IMAGE, pageInset } from "../../utils/page-geometry";
 
-/** Teletext page images are 720 × 432. */
-const IMAGE_RATIO = 432 / 720;
+/** Shape of the visible (cropped) part of a page image. */
+const IMAGE_RATIO = (IMAGE.height - IMAGE.bottom) / (IMAGE.width - IMAGE.left);
 
 /**
  * Start view with every favourite page stacked, in the user's order.
@@ -43,8 +44,8 @@ export const FavoritesFeed: React.FC<{
     return (
       <View style={styles.empty}>
         <Text style={[styles.emptyText, { color: theme.textMuted }]}>
-          Suosikkeja ei vielä ole. Lisää sivu suosikiksi sydämestä, niin se
-          näkyy täällä.
+          Suosikkeja ei vielä ole. Lisää sivu suosikiksi yläpalkin sydämestä tai
+          kohdasta Asetukset → Suosikit, niin se näkyy täällä.
         </Text>
       </View>
     );
@@ -52,6 +53,7 @@ export const FavoritesFeed: React.FC<{
 
   return (
     <FlatList
+      testID="favorites-feed"
       data={settings.favorites}
       keyExtractor={(p) => p}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
@@ -63,6 +65,14 @@ export const FavoritesFeed: React.FC<{
           tintColor="#fff"
           colors={[tt.cyan]}
         />
+      }
+      ListFooterComponent={
+        settings.favorites.length < 3 ? (
+          <Text style={[styles.footer, { color: theme.textMuted }]}>
+            Lisää sivuja suosikeiksi yläpalkin sydämestä tai kohdasta Asetukset
+            → Suosikit, niin ne näkyvät tässä allekkain.
+          </Text>
+        ) : null
       }
       renderItem={({ item }) =>
         width ? (
@@ -116,7 +126,8 @@ const Card: React.FC<{
   }, [page, stamp]);
 
   const count = Number(response?.page.subPageCount || 1);
-  const height = width * IMAGE_RATIO;
+  const inset = pageInset(theme.radius.page);
+  const height = (width - inset * 2) * IMAGE_RATIO + inset * 2;
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) =>
     setCurrent(Math.round(e.nativeEvent.contentOffset.x / width) + 1);
 
@@ -174,16 +185,32 @@ const Card: React.FC<{
             <Pressable
               onPress={() => onOpen(page, item)}
               accessibilityLabel={`Avaa sivu ${page}, alasivu ${item}`}
+              style={[styles.slide, { width, height }]}
             >
-              <Image
-                source={{
-                  uri:
-                    saved?.[item] ??
-                    `${getPageImgSrc(page, item)}&cacheValid=${stamp}`,
-                }}
-                resizeMode="stretch"
-                style={{ width, height }}
-              />
+              <View
+                style={[
+                  styles.inner,
+                  {
+                    top: inset,
+                    left: inset,
+                    width: width - inset * 2,
+                    height: height - inset * 2,
+                  },
+                ]}
+              >
+                <Image
+                  source={{
+                    uri:
+                      saved?.[item] ??
+                      `${getPageImgSrc(page, item)}&cacheValid=${stamp}`,
+                  }}
+                  resizeMode="stretch"
+                  style={[
+                    styles.image,
+                    cropFrame(width - inset * 2, height - inset * 2),
+                  ]}
+                />
+              </View>
             </Pressable>
           )}
         />
@@ -193,6 +220,17 @@ const Card: React.FC<{
 };
 
 const styles = StyleSheet.create({
+  image: {
+    position: "absolute",
+  },
+  slide: {
+    overflow: "hidden",
+    backgroundColor: "#000",
+  },
+  inner: {
+    position: "absolute",
+    overflow: "hidden",
+  },
   list: {
     paddingBottom: 16,
     gap: 14,
@@ -230,6 +268,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 32,
+  },
+  footer: {
+    textAlign: "center",
+    fontSize: 14,
+    lineHeight: 20,
+    paddingHorizontal: 32,
+    paddingTop: 12,
   },
   emptyText: {
     textAlign: "center",

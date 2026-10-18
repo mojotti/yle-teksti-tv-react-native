@@ -31,6 +31,7 @@ import {
 } from "../components/ui";
 import { Keypad } from "../components/home/keypad";
 import { version as appVersion } from "../../package.json";
+import { addFavorite } from "./home-model";
 import type { HomeScreenNavigationProp } from "../../App";
 
 const FEEDBACK_EMAIL = "tekstitvmobile@gmail.com";
@@ -69,12 +70,12 @@ export const SettingsScreen: React.FC = () => {
         {addError && (
           <Text style={[styles.addError, { color: tt.red }]}>{addError}</Text>
         )}
-        <Footnote text="Järjestys näkyy samana alapalkissa. Lisää sivu myös sydämestä sivun yläpalkissa." />
+        <Footnote text="Suosikit näkyvät alapalkissa tässä järjestyksessä. Sivun voi lisätä suosikiksi myös yläpalkin sydämestä." />
         <View style={styles.gap} />
         <Group>
           <Row
-            label="Suosikit korvaavat sivun linkit"
-            detail="Pois päältä alapalkissa näkyvät molemmat"
+            label="Piilota sivun linkit"
+            detail="Alapalkissa näytetään vain suosikit"
           >
             <Toggle
               value={settings.favoritesReplaceLinks}
@@ -83,7 +84,7 @@ export const SettingsScreen: React.FC = () => {
           </Row>
           <Row
             label="Aloitusnäkymä"
-            detail="Mitä sovellus näyttää avautuessaan"
+            detail="Näkymä, joka avautuu sovelluksen käynnistyessä"
             disabled={!settings.favorites.length}
           >
             <Segmented
@@ -95,7 +96,7 @@ export const SettingsScreen: React.FC = () => {
               ]}
             />
           </Row>
-          <Row label="Suosikkikuvake" detail="Alapalkin suosikeissa">
+          <Row label="Suosikkikuvake" detail="Kuvake alapalkin suosikeissa">
             <Segmented
               value={settings.favoriteIcon}
               onChange={set("favoriteIcon")}
@@ -112,7 +113,7 @@ export const SettingsScreen: React.FC = () => {
         <Group>
           <ThemePicker value={settings.theme} onChange={set("theme")} />
           {settings.theme === "glass" && (
-            <Row label="Taustan hehku" detail="Sivun värit himmeänä taustalla">
+            <Row label="Taustan hehku" detail="Sivun värit sumeana taustalla">
               <Toggle
                 value={settings.ambientGlow}
                 onChange={set("ambientGlow")}
@@ -124,16 +125,16 @@ export const SettingsScreen: React.FC = () => {
             onChange={set("screenRatio")}
           />
         </Group>
-        <Footnote text="Sivun koko koskee pystyasentoa. Vaaka-asennossa sivu näytetään aina TV:n 4:3-muodossa." />
+        <Footnote text="Koko vaikuttaa pystyasentoon. Vaaka-asennossa sivu näytetään aina television 4:3-kuvasuhteessa." />
 
-        <GroupHeader title="Navigointi" />
+        <GroupHeader title="Selaaminen" />
         <Group>
           <Row
             label="Pyyhkäisy"
             detail={
               settings.swipe === "pagesHorizontal"
-                ? "Sivut sivuttain, alasivut pystyyn"
-                : "Sivut pystyyn, alasivut sivuttain"
+                ? "Sivu vaihtuu sivuttain, alasivu pystysuunnassa"
+                : "Sivu vaihtuu pystysuunnassa, alasivu sivuttain"
             }
           >
             <Segmented
@@ -146,22 +147,35 @@ export const SettingsScreen: React.FC = () => {
             />
           </Row>
           <Row
-            label="Sivun numerot linkkeinä"
-            detail="Numeron napautus avaa sivun"
+            label="Sivunumerot linkkeinä"
+            detail="Sivulla näkyvän numeron napautus avaa sen sivun"
           >
             <Toggle value={settings.pageLinks} onChange={set("pageLinks")} />
           </Row>
-          <Row label="Korosta sivun linkit" disabled={!settings.pageLinks}>
+          <Row label="Korosta linkit sivulla" disabled={!settings.pageLinks}>
             <Toggle
               value={settings.highlightScreenLinks}
               onChange={set("highlightScreenLinks")}
               disabled={!settings.pageLinks}
             />
           </Row>
-          <Row label="Alapalkki" detail="Suosikit ja sivun linkit">
+          <Row label="Alapalkki" detail="Suosikit ja sivun linkit sivun alla">
             <Segmented
               value={settings.showDock ? "show" : "hide"}
               onChange={(v) => update({ showDock: v === "show" })}
+              options={[
+                { value: "show", label: "Näytä" },
+                { value: "hide", label: "Piilota" },
+              ]}
+            />
+          </Row>
+          <Row
+            label="Alasivupalkki"
+            detail="Alasivujen nuolet ja laskuri sivun alla"
+          >
+            <Segmented
+              value={settings.showSubpageRow ? "show" : "hide"}
+              onChange={(v) => update({ showSubpageRow: v === "show" })}
               options={[
                 { value: "show", label: "Näytä" },
                 { value: "hide", label: "Piilota" },
@@ -173,21 +187,21 @@ export const SettingsScreen: React.FC = () => {
               value={settings.orientationLock}
               onChange={set("orientationLock")}
               options={[
-                { value: "auto", label: "Auto" },
+                { value: "auto", label: "Vapaa" },
                 { value: "portrait", label: "Pysty" },
               ]}
             />
           </Row>
         </Group>
 
-        <GroupHeader title="Offline" />
+        <GroupHeader title="Ilman yhteyttä" />
         <OfflineGroup />
-        <Footnote text="Lataa suosikit ja niiden alasivut puhelimeen, niin voit lukea niitä ilman yhteyttä, esimerkiksi lentokoneessa. Muut sivut vaativat yhteyden." />
+        <Footnote text="Suosikit alasivuineen tallennetaan puhelimeen, joten voit lukea niitä myös ilman verkkoyhteyttä, esimerkiksi lentokoneessa." />
 
         <GroupHeader title="Tietoa" />
         <Group>
           <Row
-            label="Ohje"
+            label="Näytä ohje"
             onPress={() => {
               update({ onboardingDone: false });
               navigation.goBack();
@@ -237,10 +251,18 @@ export const SettingsScreen: React.FC = () => {
           // Fetch the page once to get its title and check that it exists.
           const result = await lookupPage(page);
           if (result === "missing") {
-            setAddError(`Sivua ${page} ei ole, sitä ei lisätty.`);
+            setAddError(
+              `Sivua ${page} ei ole olemassa, joten sitä ei lisätty.`,
+            );
             return;
           }
-          update({ favorites: [...latestFavorites.current, page] });
+          update({
+            favorites: addFavorite(
+              latestFavorites.current,
+              page,
+              MAX_FAVORITES,
+            ),
+          });
         }}
       />
     </View>
@@ -263,8 +285,8 @@ const OfflineGroup: React.FC = () => {
   return (
     <Group>
       <Row
-        label="Lataa suosikit Wi-Fissä"
-        detail="Automaattisesti, kun sovellus avataan"
+        label="Lataa automaattisesti Wi-Fissä"
+        detail="Enintään kerran tunnissa, kun sovellus avataan"
       >
         <Toggle
           value={settings.offlineAutoDownload}
@@ -300,6 +322,9 @@ const OfflineGroup: React.FC = () => {
     </Group>
   );
 };
+
+const isSorted = (list: string[]) =>
+  list.every((x, i) => i === 0 || list[i - 1] <= x);
 
 const Favorites: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
   const theme = useTheme();
@@ -352,6 +377,14 @@ const Favorites: React.FC<{ onAdd: () => void }> = ({ onAdd }) => {
           />
         </View>
       ))}
+      {!isSorted(favorites) && (
+        <Row
+          label="Järjestä numerojärjestykseen"
+          onPress={() => update({ favorites: [...favorites].sort() })}
+        >
+          <Icon name="swap-vertical" size={18} color={theme.textMuted} />
+        </Row>
+      )}
       <Row
         label={
           favorites.length >= MAX_FAVORITES

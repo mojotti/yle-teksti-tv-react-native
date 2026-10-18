@@ -211,35 +211,24 @@ export const prettyTitle = (title: string): string => {
     return title;
   }
   let first = true;
+  // Split on spaces, hyphens and slashes, keeping the separators.
   return title
-    .split(" ")
-    .map((word) =>
-      word
-        .split("-")
-        .map((segment) => {
-          if (!segment) {
-            return segment;
-          }
-          const out = recaseSegment(segment, first);
-          first = false;
-          return out;
-        })
-        .join("-"),
-    )
-    .join(" ");
+    .split(/([\s\-/]+)/)
+    .map((part) => {
+      if (!part || /^[\s\-/]+$/.test(part)) {
+        return part;
+      }
+      const out = recaseSegment(part, first);
+      first = false;
+      return out;
+    })
+    .join("");
 };
 
-/**
- * A short title for a page: the API's name when it has one, otherwise the
- * section heading from the page's first lines ("ULKOMAAT", "NBA-KORIPALLO").
- */
-export const getPageTitle = (response: TextTvResponse): string => {
-  const name = response.page.name?.trim();
-  if (name) {
-    return prettyTitle(name);
-  }
+/** The section heading in a subpage's first lines ("ULKOMAAT", "NHL/ITÄ"). */
+const subPageHeading = (response: TextTvResponse, subPage: number) => {
   const lines =
-    response.page.subPages[0]?.content
+    response.page.subPages[subPage - 1]?.content
       .find((c) => c.type === "text")
       ?.line.slice(0, 3) ?? [];
   for (const line of lines) {
@@ -248,11 +237,21 @@ export const getPageTitle = (response: TextTvResponse): string => {
       .map((x) => x.trim())
       .find((x) => x && !/^\d+\/\d+$/.test(x));
     if (part) {
-      return prettyTitle(part);
+      return part;
     }
   }
   return "";
 };
+
+/**
+ * A short title for a page or subpage: the subpage's own section heading
+ * when it has one (they differ between subpages, e.g. "NHL/ITÄ" and
+ * "NHL/LÄNSI"), otherwise the API's page name. All caps are recased.
+ */
+export const getPageTitle = (response: TextTvResponse, subPage = 1): string =>
+  prettyTitle(
+    subPageHeading(response, subPage) || response.page.name?.trim() || "",
+  );
 
 /** The page on Yle's own Teksti-TV website. */
 export const getPageWebUrl = (page: string) =>

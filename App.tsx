@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 import React, { FC } from "react";
-import { StatusBar, View } from "react-native";
+import { Platform, StatusBar, View } from "react-native";
 import { DarkTheme, NavigationContainer } from "@react-navigation/native";
 import {
   createStackNavigator,
@@ -85,7 +85,10 @@ const Navigator: FC = () => {
         paddingRight: insets.right,
       }}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      {/* iOS: styled by the native root view controller. */}
+      {Platform.OS === "android" && (
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      )}
       <Stack.Navigator
         initialRouteName="Home"
         screenOptions={{ cardStyle: { backgroundColor: theme.bg } }}

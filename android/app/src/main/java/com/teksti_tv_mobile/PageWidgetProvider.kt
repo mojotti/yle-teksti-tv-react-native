@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.view.View
@@ -15,7 +16,9 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
 import kotlin.concurrent.thread
+import kotlin.math.roundToInt
 import org.json.JSONObject
 
 /**
@@ -43,7 +46,8 @@ class PageWidgetProvider : AppWidgetProvider() {
     val id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
     val direction = intent.getStringExtra(EXTRA_DIRECTION) ?: return
     val pending = goAsync()
-    thread {
+    // One tap at a time, so quick taps each move one step from the last result.
+    taps.execute {
       try {
         navigate(context, id, direction)
         update(context, AppWidgetManager.getInstance(context), id)
@@ -67,6 +71,8 @@ class PageWidgetProvider : AppWidgetProvider() {
   companion object {
     const val ACTION_NAVIGATE = "com.teksti_tv_mobile.WIDGET_NAVIGATE"
     const val EXTRA_DIRECTION = "direction"
+
+    private val taps = Executors.newSingleThreadExecutor()
 
     /** Navigated pages return to the chosen one after an hour without taps. */
     private const val NAV_EXPIRY_MS = 60 * 60 * 1000L
@@ -143,6 +149,17 @@ class PageWidgetProvider : AppWidgetProvider() {
         .apply()
     }
 
+    /**
+     * Yle's 720 × 432 images have an empty 18 px column on the left and row at
+     * the bottom; cutting them off centres the page (the app does the same).
+     */
+    private fun cropBlankEdges(bitmap: Bitmap): Bitmap {
+      val scale = bitmap.width / 720f
+      val edge = (18 * scale).roundToInt()
+      if (edge <= 0 || bitmap.width <= edge * 2 || bitmap.height <= edge * 2) return bitmap
+      return Bitmap.createBitmap(bitmap, edge, 0, bitmap.width - edge, bitmap.height - edge)
+    }
+
     private fun keyIntent(context: Context, id: Int, direction: String, request: Int): PendingIntent {
       val intent = Intent(context, PageWidgetProvider::class.java)
         .setAction(ACTION_NAVIGATE)
@@ -179,9 +196,11 @@ class PageWidgetProvider : AppWidgetProvider() {
       views.setOnClickPendingIntent(R.id.key_next_page, keyIntent(context, id, "nextPage", 2))
       views.setOnClickPendingIntent(R.id.key_prev_sub, keyIntent(context, id, "prevSub", 3))
       views.setOnClickPendingIntent(R.id.key_next_sub, keyIntent(context, id, "nextSub", 4))
-      val subVisibility = if (subCount > 1) View.VISIBLE else View.INVISIBLE
-      views.setViewVisibility(R.id.key_prev_sub, subVisibility)
-      views.setViewVisibility(R.id.key_next_sub, subVisibility)
+      // Single-subpage pages dim the subpage keys instead of hiding them, so
+      // the page keys never move under the user's finger.
+      val subAlpha = if (subCount > 1) 1f else 0.3f
+      views.setFloat(R.id.key_prev_sub, "setAlpha", subAlpha)
+      views.setFloat(R.id.key_next_sub, "setAlpha", subAlpha)
 
       val bitmap = if (appId.isEmpty()) null else withRetry {
         val url = URL("https://external.api.yle.fi/v1/teletext/images/$page/$sub.png?app_id=$appId&app_key=$appKey&t=${System.currentTimeMillis()}")
@@ -189,7 +208,7 @@ class PageWidgetProvider : AppWidgetProvider() {
         conn.connectTimeout = 8000
         conn.readTimeout = 8000
         conn.inputStream.use { BitmapFactory.decodeStream(it) }
-      }
+      }?.let(::cropBlankEdges)
 
       if (bitmap != null) {
         views.setImageViewBitmap(R.id.widget_image, bitmap)
@@ -197,7 +216,7 @@ class PageWidgetProvider : AppWidgetProvider() {
       } else {
         views.setTextViewText(
           R.id.widget_message,
-          if (appId.isEmpty()) "Avaa sovellus kerran" else "Sivua ei saatu. Yritä uudelleen.",
+          if (appId.isEmpty()) "Avaa Teksti-TV-sovellus kerran" else "Sivua ei saatu. Yritä hetken päästä uudelleen.",
         )
         views.setViewVisibility(R.id.widget_message, View.VISIBLE)
       }

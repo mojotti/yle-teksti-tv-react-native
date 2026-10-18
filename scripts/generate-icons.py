@@ -1,184 +1,160 @@
 #!/usr/bin/env python3
-"""Generate the app icon for iOS and Android from one rectangle-based design.
+"""Generate the app icon for iOS and Android ("Lasi" design with glowing keys).
 
-The icon: a yellow "T" built from teletext mosaic blocks on teletext blue,
-a cyan rule, and the four colour keys (red, green, yellow, cyan) on a black
-strip, the same keys the app uses for page and subpage navigation.
-Everything is drawn on a 24-unit grid.
+A miniature of teletext page 100 in glass style: a blue header with a white
+title block and "Teksti-TV" bar, a cyan band, two numbered headlines, and the
+four colour keys (red, green, yellow, cyan) as glossy, softly glowing buttons
+on a dark strip.
+Everything is drawn on a 24-unit grid with scripts/icon_shapes.py.
 
 Usage: python3 scripts/generate-icons.py   (run from the repo root)
 """
 import json
 import os
-import struct
-import zlib
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from icon_shapes import grrect, render, rrect, write_png  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-BLUE = (0x2F, 0x45, 0xFF)
-CYAN = (0x39, 0xE3, 0xFF)
-GREEN = (0x2F, 0xE0, 0x6A)
-YELLOW = (0xFF, 0xE2, 0x3D)
-WHITE = (0xFF, 0xFF, 0xFF)
-BLACK = (0x00, 0x00, 0x00)
-
-RED = (0xFF, 0x3B, 0x3B)
-
-STRIP_TOP = 16.4
+WHITE = (255, 255, 255)
+RED = (255, 59, 59)
+GREEN = (47, 224, 106)
+YELLOW = (255, 226, 61)
+CYAN = (57, 227, 255)
+BLUE = (47, 69, 255)
+DARK = (4, 5, 10)
 
 
-def _t_blocks(cell=2.7, gap=0.34, top=2.2):
-    """The mosaic "T": 6 x 2 blocks across, a 2 x 3 stem."""
-    out = []
-    x0 = 12 - 3 * cell
-    for r in range(2):
-        for c in range(6):
-            out.append((x0 + c * cell + gap / 2, top + r * cell + gap / 2, cell - gap, cell - gap, YELLOW))
-    for r in range(3):
-        for c in range(2):
-            out.append((12 - cell + c * cell + gap / 2, top + (2 + r) * cell + gap / 2, cell - gap, cell - gap, YELLOW))
-    return out
+def lighter(c, f):
+    return tuple(int(v + (255 - v) * f) for v in c)
 
 
-def _keys(y=18.7, h=2.0, x0=3.4, w=3.7, gap=0.8):
-    return [(x0 + i * (w + gap), y, w, h, c) for i, c in enumerate((RED, GREEN, YELLOW, CYAN))]
+def darker(c, f):
+    return tuple(int(v * (1 - f)) for v in c)
 
 
-# (x, y, w, h, colour), painted in order.
-BANDS_IOS = [
-    (0, 0, 24, 24, BLUE),
-    (0, STRIP_TOP, 24, 24 - STRIP_TOP, BLACK),
-    (0, STRIP_TOP, 24, 0.7, CYAN),
-]
-MARKS_IOS = _t_blocks() + _keys()
-
-# Android adaptive icons: launchers show the middle two-thirds of the
-# layers and mask it to a circle, squircle etc. Everything is scaled
-# towards the centre so the marks stay inside the circle; the bands are
-# then stretched back out to the edges.
-ANDROID_SCALE = 0.62
-
-
-def _scale_y(y):
-    return 12 + (y - 12) * ANDROID_SCALE
-
-
-def android_bands():
-    out = []
-    for x, y, w, h, c in BANDS_IOS:
-        top, bottom = _scale_y(y), _scale_y(y + h)
-        if y <= 0:
-            top = 0
-        if y + h >= 24:
-            bottom = 24
-        out.append((0, top, 24, bottom - top, c))
-    return out
-
-
-def android_marks():
+# Each part is (kind, shape). "band" parts span the full width; the rest are
+# details that must stay inside Android's circular safe zone. "glow" parts
+# are the soft halos around the white details and keys.
+def halo(x, y, w, h, r, c, spread, strength):
+    """A soft glow: many faint, growing outlines of a shape's colour under it.
+    Enough rings that the fade looks smooth even at 1024 px."""
+    steps = 24
+    alpha = max(1, round(strength / steps))
     return [
-        (12 + (x - 12) * ANDROID_SCALE, _scale_y(y), w * ANDROID_SCALE, h * ANDROID_SCALE, c)
-        for x, y, w, h, c in MARKS_IOS
+        ("glow", rrect(x - e, y - e, w + 2 * e, h + 2 * e, r + e, c + (alpha,)))
+        for e in (spread * i / steps for i in range(steps, 0, -1))
     ]
 
 
-def rasterize(rects, size, ss=4, circle=False):
-    """Paint rects into an RGBA image with ss x ss supersampling."""
-    big = size * ss
-    unit = big / 24.0
-    buf = [[BLACK + (255,)] * big for _ in range(big)]
-    for x, y, w, h, c in rects:
-        x0, y0 = int(round(x * unit)), int(round(y * unit))
-        x1, y1 = int(round((x + w) * unit)), int(round((y + h) * unit))
-        row = c + (255,)
-        for yy in range(max(0, y0), min(big, y1)):
-            r = buf[yy]
-            for xx in range(max(0, x0), min(big, x1)):
-                r[xx] = row
-    if circle:
-        cx = cy = big / 2.0
-        rad2 = (big / 2.0) ** 2
-        for yy in range(big):
-            for xx in range(big):
-                if (xx + 0.5 - cx) ** 2 + (yy + 0.5 - cy) ** 2 > rad2:
-                    buf[yy][xx] = (0, 0, 0, 0)
+def white(x, y, w, h, r, spread):
+    return halo(x, y, w, h, r, WHITE, spread, 78) + [("mark", rrect(x, y, w, h, r, WHITE))]
+
+
+def design():
+    parts = [
+        ("band", grrect(0, 0, 24, 24, 0, (24, 28, 44), DARK)),
+        ("band", grrect(0, 0, 24, 6.2, 0, (84, 104, 255), (36, 54, 230))),
+    ]
+    parts += white(3.2, 1.6, 7.44, 2.88, 0.6, 0.45)
+    parts += white(11.72, 2.46, 9.08, 1.21, 0.18, 0.45)
+    parts += [
+        ("band", grrect(0, 6.2, 24, 1.9, 0, (120, 238, 255), (40, 200, 240))),
+        ("mark", rrect(3.2, 6.7, 8.5, 0.9, 0.3, BLUE)),
+    ]
+    for y, w in ((10.3, 17.6), (13.2, 13)):
+        parts += white(3.2, y, 2.85, 1.5, 0.75, 0.35)
+        parts += white(6.65, y, w - 3.45, 1.5, 0.75, 0.35)
+    parts.append(("band", grrect(0, 17.6, 24, 6.4, 0, (14, 15, 22), (4, 4, 8))))
+    kw = (18.8 - 3 * 0.8) / 4
+    for i, c in enumerate((RED, GREEN, YELLOW, CYAN)):
+        x = 2.6 + i * (kw + 0.8)
+        parts += halo(x, 19.0, kw, 3.2, 1.0, c, 1.3, 144)
+        parts += [
+            ("key", grrect(x, 19.0, kw, 3.2, 1.0, lighter(c, 0.3), darker(c, 0.15))),
+            # Glass highlight on the upper part of each key.
+            ("shine", rrect(x + kw * 0.12, 19.32, kw * 0.76, 0.96, 0.48, WHITE + (110,))),
+        ]
+    return parts
+
+
+def _move(shape, fx, fy, fs):
+    """Maps a shape's geometry with x' = fx(x), y' = fy(y) and radii times fs."""
+    kind, x, y, w, h, r, c = shape
+    x0, y0 = fx(x), fy(y)
+    return (kind, x0, y0, fx(x + w) - x0, fy(y + h) - y0, r * fs, c)
+
+
+# Android adaptive icons show the middle two-thirds of the layer, masked to a
+# circle, squircle etc. Details shrink towards the centre to stay inside the
+# circle; full-width bands keep reaching the edges. The circle mask is 66 of
+# 108 dp (radius 7.33 units); the farthest corners (title block, keys) sit about
+# 13.9 units from the centre, so 0.52 keeps them inside.
+ANDROID_SCALE = 0.52
+
+
+def android_parts():
+    def s(v):
+        return 12 + (v - 12) * ANDROID_SCALE
+
+    def band_y(v):
+        return v if v <= 0 or v >= 24 else s(v)
+
     out = []
-    n = ss * ss
-    for y in range(size):
-        line = []
-        for x in range(size):
-            acc = [0, 0, 0, 0]
-            for dy in range(ss):
-                r = buf[y * ss + dy]
-                for dx in range(ss):
-                    p = r[x * ss + dx]
-                    a = p[3]
-                    acc[0] += p[0] * a
-                    acc[1] += p[1] * a
-                    acc[2] += p[2] * a
-                    acc[3] += a
-            a = acc[3]
-            if a == 0:
-                line.append((0, 0, 0, 0))
-            else:
-                line.append((acc[0] // a, acc[1] // a, acc[2] // a, a // n))
-        out.append(line)
+    for kind, shape in design():
+        if kind == "band":
+            out.append((kind, _move(shape, lambda v: v, band_y, 1)))
+        else:
+            out.append((kind, _move(shape, s, s, ANDROID_SCALE)))
     return out
+
+
+def shapes(parts):
+    return [shape for _, shape in parts]
 
 
 def grayscale(img):
     return [[(int(0.3 * r + 0.59 * g + 0.11 * b),) * 3 + (a,) for r, g, b, a in row] for row in img]
 
 
-def write_png(path, img, alpha=True):
-    h, w = len(img), len(img[0])
-    raw = bytearray()
-    for row in img:
-        raw.append(0)
-        for p in row:
-            raw.extend(p if alpha else p[:3])
-    color_type = 6 if alpha else 2
-
-    def chunk(tag, data):
-        c = struct.pack(">I", len(data)) + tag + data
-        return c + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
-
-    png = b"\x89PNG\r\n\x1a\n"
-    png += chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, color_type, 0, 0, 0))
-    png += chunk(b"IDAT", zlib.compress(bytes(raw), 9))
-    png += chunk(b"IEND", b"")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "wb") as f:
-        f.write(png)
-
-
-def hexc(c):
-    return "#FF%02X%02X%02X" % c
-
-
-def vector(rects, path, color_override=None):
-    paths = "\n".join(
-        '    <path android:fillColor="%s" android:pathData="M%.3f,%.3fh%.3fv%.3fh%.3fz"/>'
-        % (color_override or hexc(c), x, y, w, h, -w)
-        for x, y, w, h, c in rects
+def rrect_path(x, y, w, h, r):
+    """SVG path data for a rounded rectangle."""
+    r = min(r, w / 2, h / 2)
+    return (
+        "M%.3f,%.3fh%.3fa%.3f,%.3f 0 0 1 %.3f,%.3fv%.3fa%.3f,%.3f 0 0 1 %.3f,%.3f"
+        "h%.3fa%.3f,%.3f 0 0 1 %.3f,%.3fv%.3fa%.3f,%.3f 0 0 1 %.3f,%.3fz"
+        % (
+            x + r, y, w - 2 * r, r, r, r, r,
+            h - 2 * r, r, r, -r, r,
+            -(w - 2 * r), r, r, -r, -r,
+            -(h - 2 * r), r, r, r, -r,
+        )
     )
-    xml = (
+
+
+def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(text)
+
+
+def vector(paths, path):
+    body = "\n".join('    <path android:fillColor="%s" android:pathData="%s"/>' % p for p in paths)
+    write(
+        path,
         '<?xml version="1.0" encoding="utf-8"?>\n'
         "<!-- Generated by scripts/generate-icons.py -->\n"
         '<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
         '    android:width="108dp" android:height="108dp"\n'
-        '    android:viewportWidth="24" android:viewportHeight="24">\n'
-        + paths
-        + "\n</vector>\n"
+        '    android:viewportWidth="24" android:viewportHeight="24">\n' + body + "\n</vector>\n",
     )
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
-        f.write(xml)
 
 
 def ios():
     base = os.path.join(ROOT, "ios/TekstiTVReactNativeApp/Images.xcassets/AppIcon.appiconset")
-    img = rasterize(BANDS_IOS + MARKS_IOS, 1024, ss=2)
+    img = render(shapes(design()), 1024, ss=2)
     write_png(os.path.join(base, "AppIcon-1024.png"), img, alpha=False)
     write_png(os.path.join(base, "AppIcon-1024-tinted.png"), grayscale(img), alpha=False)
     contents = {
@@ -201,39 +177,57 @@ def ios():
         ],
         "info": {"author": "xcode", "version": 1},
     }
-    with open(os.path.join(base, "Contents.json"), "w") as f:
-        json.dump(contents, f, indent=2)
-        f.write("\n")
+    write(os.path.join(base, "Contents.json"), json.dumps(contents, indent=2) + "\n")
+
+
+DENSITIES = (("mdpi", 1), ("hdpi", 1.5), ("xhdpi", 2), ("xxhdpi", 3), ("xxxhdpi", 4))
 
 
 def android():
     res = os.path.join(ROOT, "android/app/src/main/res")
-    marks = android_marks()
-    vector(android_bands(), os.path.join(res, "drawable/ic_launcher_background_layer.xml"))
-    vector(marks, os.path.join(res, "drawable/ic_launcher_foreground_layer.xml"))
-    vector(marks, os.path.join(res, "drawable/ic_launcher_monochrome_layer.xml"), color_override="#FFFFFFFF")
+    parts = android_parts()
+    art = shapes(parts)
+
+    # Adaptive icon: the art as a bitmap foreground over a plain dark layer,
+    # plus a white monochrome layer (themed icons) from the white details and keys.
+    for folder, scale in DENSITIES:
+        write_png(
+            os.path.join(res, "mipmap-" + folder, "ic_launcher_foreground.png"),
+            render(art, int(108 * scale), ss=3),
+            alpha=False,
+        )
+    vector([("#FF04050A", "M0,0h24v24h-24z")], os.path.join(res, "drawable/ic_launcher_background_layer.xml"))
+    mono = [
+        ("#FFFFFFFF", rrect_path(*shape[1:6]))
+        for kind, shape in parts
+        if kind == "key" or (kind == "mark" and shape[6] == WHITE)
+    ]
+    vector(mono, os.path.join(res, "drawable/ic_launcher_monochrome_layer.xml"))
+    old = os.path.join(res, "drawable/ic_launcher_foreground_layer.xml")
+    if os.path.exists(old):
+        os.remove(old)
     adaptive = (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
         '    <background android:drawable="@drawable/ic_launcher_background_layer"/>\n'
-        '    <foreground android:drawable="@drawable/ic_launcher_foreground_layer"/>\n'
+        '    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>\n'
         '    <monochrome android:drawable="@drawable/ic_launcher_monochrome_layer"/>\n'
         "</adaptive-icon>\n"
     )
     for name in ("ic_launcher.xml", "ic_launcher_round.xml"):
-        with open(os.path.join(res, "mipmap-anydpi-v26", name), "w") as f:
-            f.write(adaptive)
-    # Legacy bitmaps for Android < 8: the visible middle of the adaptive
-    # art (units 4..20) scaled up, so they match what launchers show.
-    full = [
-        ((x - 4) * 1.5, (y - 4) * 1.5, w * 1.5, h * 1.5, c)
-        for x, y, w, h, c in android_bands() + marks
-    ]
+        write(os.path.join(res, "mipmap-anydpi-v26", name), adaptive)
+
+    # Legacy bitmaps for Android < 8: the visible middle of the adaptive art
+    # (units 4..20) scaled up, so they match what launchers show.
+    def legacy(v):
+        return (v - 4) * 1.5
+
+    full = [_move(shape, legacy, legacy, 1.5) for shape in art]
     for folder, px in (("ldpi", 36), ("mdpi", 48), ("hdpi", 72), ("xhdpi", 96), ("xxhdpi", 144), ("xxxhdpi", 192)):
         d = os.path.join(res, "mipmap-" + folder)
-        write_png(os.path.join(d, "ic_launcher.png"), rasterize(full, px))
-        write_png(os.path.join(d, "ic_launcher_round.png"), rasterize(full, px, circle=True))
-    write_png(os.path.join(res, "playstore-icon.png"), rasterize(BANDS_IOS + MARKS_IOS, 512, ss=2), alpha=False)
+        write_png(os.path.join(d, "ic_launcher.png"), render(full, px, ss=4))
+        write_png(os.path.join(d, "ic_launcher_round.png"), render(full, px, ss=4, mask_circle=True))
+    write_png(os.path.join(res, "playstore-icon.png"), render(shapes(design()), 512, ss=3), alpha=False)
 
 
 if __name__ == "__main__":

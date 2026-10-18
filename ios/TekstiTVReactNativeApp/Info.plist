@@ -45,7 +45,9 @@
 		<true/>
 	</dict>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Teksti-TV tallentaa jaetun sivun kuvan Kuviin.</string>
+	<string>Teksti-TV tallentaa jaetut sivut kuviisi.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Teksti-TV tallentaa jaetut sivut Teksti-TV-albumiin.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

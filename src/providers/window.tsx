@@ -7,6 +7,7 @@ import React, {
 import {
   Dimensions,
   ScaledSize,
+  Platform,
   StatusBar,
   useWindowDimensions,
 } from "react-native";
@@ -35,7 +36,11 @@ export const WindowProvider: FunctionComponent<PropsWithChildren> = (props) => {
       : OrientationTypes.Landscape;
 
   useEffect(() => {
-    StatusBar.setHidden(orientation === OrientationTypes.Landscape);
+    // On iOS the root view controller decides (RN's StatusBar module throws
+    // when status bar appearance is view-controller based).
+    if (Platform.OS === "android") {
+      StatusBar.setHidden(orientation === OrientationTypes.Landscape);
+    }
   }, [orientation]);
 
   return (

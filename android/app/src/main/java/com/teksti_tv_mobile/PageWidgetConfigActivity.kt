@@ -49,7 +49,7 @@ class PageWidgetConfigActivity : Activity() {
     })
 
     val input = EditText(this).apply {
-      hint = "Sivunumero 100–899"
+      hint = "Sivunumero (100–899)"
       setHintTextColor(Color.parseColor("#8A8F98"))
       setTextColor(Color.WHITE)
       inputType = InputType.TYPE_CLASS_NUMBER
@@ -64,7 +64,7 @@ class PageWidgetConfigActivity : Activity() {
       setOnClickListener {
         val page = input.text.toString()
         val n = page.toIntOrNull()
-        if (page.length == 3 && n != null && n in 100..899) save(page) else input.error = "Sivut 100–899"
+        if (page.length == 3 && n != null && n in 100..899) save(page) else input.error = "Sivunumeron pitää olla väliltä 100–899"
       }
     })
 

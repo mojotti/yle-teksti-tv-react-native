@@ -10,7 +10,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { tt } from "../../theme/theme";
 
 type Rect = { x: number; y: number; width: number; height: number };
-type TargetId = "pill" | "fastext" | "favorite";
+export type TargetId =
+  | "pill"
+  | "fastext"
+  | "home"
+  | "refresh"
+  | "share"
+  | "favorite"
+  | "menu";
 
 const CoachContext = createContext<{
   rects: Partial<Record<TargetId, Rect>>;
@@ -56,21 +63,41 @@ export const useCoachTarget = (id: TargetId) => {
   return { ref, onLayout };
 };
 
-const STEPS: { target: TargetId; title: string; text: string }[] = [
+export const STEPS: { target: TargetId; title: string; text: string }[] = [
   {
     target: "pill",
-    title: "Napauta sivunumeroa",
-    text: "Avaa numeronäppäimistö ja siirry mille tahansa sivulle 100–899. Myös sivun napauttaminen avaa sen.",
+    title: "Siirry sivulle",
+    text: "Napauta sivunumeroa ja kirjoita uusi numero. Myös sivun napauttaminen avaa numeronäppäimistön.",
   },
   {
     target: "fastext",
     title: "Värinäppäimet",
-    text: "Punainen ja vihreä vaihtavat sivua, keltainen ja syaani alasivua. Voit myös pyyhkäistä sivua.",
+    text: "Punainen ja vihreä vievät edelliselle ja seuraavalle sivulle, keltainen ja syaani vaihtavat alasivua. Saman voi tehdä pyyhkäisemällä sivua.",
+  },
+  {
+    target: "home",
+    title: "Etusivu",
+    text: "Talon kuvasta pääset aina etusivulle 100.",
+  },
+  {
+    target: "refresh",
+    title: "Päivitä",
+    text: "Hakee sivun uusimman version.",
+  },
+  {
+    target: "share",
+    title: "Jaa",
+    text: "Jaa sivu kuvana tai linkkinä, tai tallenna se puhelimen kuviin.",
   },
   {
     target: "favorite",
-    title: "Lisää suosikki",
-    text: "Sydän lisää sivun suosikkeihin. Suosikit näkyvät alapalkissa, ja niiden järjestystä voi muuttaa asetuksissa.",
+    title: "Suosikit",
+    text: "Sydämestä sivu lisätään suosikkeihin. Suosikit näkyvät alapalkissa.",
+  },
+  {
+    target: "menu",
+    title: "Lisää toimintoja",
+    text: "Kolmen pisteen valikosta löydät asetukset, suosikkinäkymän ja tämän ohjeen.",
   },
 ];
 

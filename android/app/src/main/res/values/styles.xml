@@ -12,14 +12,11 @@
 
     <!-- One colour key in the widget -->
     <style name="WidgetKey">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">match_parent</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:layout_marginHorizontal">2dp</item>
-        <item name="android:gravity">center</item>
-        <item name="android:textColor">#FF000000</item>
-        <item name="android:textSize">15sp</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:layout_width">30dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:padding">4dp</item>
+        <item name="android:scaleType">fitCenter</item>
     </style>
 
     <!-- Page picker shown when a widget is added -->

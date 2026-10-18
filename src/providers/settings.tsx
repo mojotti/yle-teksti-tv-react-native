@@ -30,6 +30,8 @@ export interface Settings {
   pageLinks: boolean;
   highlightScreenLinks: boolean;
   showDock: boolean;
+  /** Portrait only; landscape always shows subpages in the side rail. */
+  showSubpageRow: boolean;
   orientationLock: "auto" | "portrait";
   offlineAutoDownload: boolean;
   onboardingDone: boolean;
@@ -42,13 +44,14 @@ export const defaultSettings: Settings = {
   favoriteIcon: "heart",
   favoritesReplaceLinks: false,
   startView: "front",
-  theme: "teletext",
+  theme: "glass",
   ambientGlow: true,
   screenRatio: "tall",
   swipe: "pagesHorizontal",
   pageLinks: true,
   highlightScreenLinks: false,
   showDock: true,
+  showSubpageRow: true,
   orientationLock: "auto",
   offlineAutoDownload: false,
   onboardingDone: false,
@@ -90,7 +93,7 @@ const legacyRatio = (ratio: string | null): ScreenRatio => {
   }
 };
 
-const loadSettings = async (): Promise<Settings> => {
+export const loadSettings = async (): Promise<Settings> => {
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
   if (stored) {
@@ -110,7 +113,7 @@ const loadSettings = async (): Promise<Settings> => {
     ...defaultSettings,
     screenRatio: legacyRatio(ratio),
     highlightScreenLinks: highlight === "true",
-    favorites: favorites ? favorites.split(",").filter(Boolean) : [],
+    favorites: favorites ? favorites.split(",").filter(Boolean).sort() : [],
     favoriteIcon: (icon as FavoriteIcon | null) ?? defaultSettings.favoriteIcon,
   };
 };

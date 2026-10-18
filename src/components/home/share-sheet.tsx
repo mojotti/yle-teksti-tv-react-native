@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PageContext } from "../../providers/page";
 import { getPageImgSrc, getPageWebUrl } from "../../utils";
+import { fetchDataUri } from "../../utils/offline";
 import { useTheme } from "../../theme/theme";
 import { Icon, Segmented } from "../ui";
 
@@ -64,6 +65,10 @@ export const ShareSheet: React.FC<{
   const shotRef = useRef<View>(null);
   const loaded = useRef<(() => void) | null>(null);
   const stamp = useRef(Date.now());
+  // Images as local data URIs: drawing a network image into a snapshot can
+  // come out black (react-native-view-shot on the new architecture).
+  const [uris, setUris] = useState<Record<string, string>>({});
+  const urisRef = useRef<Record<string, string>>({});
 
   const count = Number(textTvResponse?.page.subPageCount || 1);
   // Subpage "time" is a rotation interval; the page's time is its update.
@@ -72,10 +77,14 @@ export const ShareSheet: React.FC<{
   useEffect(() => {
     if (visible) {
       stamp.current = Date.now();
+      urisRef.current = {};
+      setUris({});
       setRenderSub(subPage);
       setScope("one");
       setMessage(undefined);
+      ensureUri(subPage).catch(() => {});
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, subPage]);
 
   useEffect(() => {
@@ -89,27 +98,42 @@ export const ShareSheet: React.FC<{
     return () => sub.remove();
   }, [visible, onClose]);
 
+  const remote = (n: string) =>
+    `${getPageImgSrc(page, n)}&cacheValid=${stamp.current}`;
+
+  async function ensureUri(n: string) {
+    if (urisRef.current[n]) {
+      return;
+    }
+    const uri = await fetchDataUri(remote(n));
+    urisRef.current = { ...urisRef.current, [n]: uri };
+    setUris(urisRef.current);
+  }
+
   if (!visible) {
     return null;
   }
 
-  const src = (n: string) =>
-    `${getPageImgSrc(page, n)}&cacheValid=${stamp.current}`;
-
   /** Renders subpage `n` into the capture view and returns its PNG file. */
   const capture = async (n: string): Promise<string> => {
-    if (n !== renderSub) {
-      await new Promise<void>((resolve) => {
-        loaded.current = resolve;
-        setRenderSub(n);
+    if (!urisRef.current[n] || n !== renderSub) {
+      await new Promise<void>((resolve, reject) => {
+        loaded.current = () => resolve();
+        ensureUri(n)
+          .then(() => setRenderSub(n))
+          .catch(reject);
       });
     }
-    return captureRef(shotRef, {
+    // Let the decoded image reach the screen before the snapshot.
+    await new Promise<void>((r) => setTimeout(() => r(), 80));
+    const file = await captureRef(shotRef, {
       format: "png",
       quality: 1,
       width: 1080,
       result: "tmpfile",
+      useRenderInContext: Platform.OS === "ios",
     });
+    return file.startsWith("file://") ? file : `file://${file}`;
   };
 
   const captureAll = async () => {
@@ -133,7 +157,7 @@ export const ShareSheet: React.FC<{
     try {
       await action();
     } catch {
-      setMessage("Toiminto epäonnistui. Yritä uudelleen.");
+      setMessage("Kuvan tekeminen epäonnistui. Yritä uudelleen.");
     } finally {
       setBusy(false);
     }
@@ -156,17 +180,17 @@ export const ShareSheet: React.FC<{
   const saveImages = () =>
     run(async () => {
       if (!(await ensureSavePermission())) {
-        setMessage("Kuvien tallennus vaatii luvan.");
+        setMessage("Kuvien tallentamiseen tarvitaan lupa asetuksista.");
         return;
       }
       const files = await captureAll();
       for (const f of files) {
-        await CameraRoll.saveAsset(f, { type: "photo" });
+        await CameraRoll.saveAsset(f, { type: "photo", album: "Teksti-TV" });
       }
       setMessage(
         files.length > 1
-          ? `${files.length} kuvaa tallennettu kuviin.`
-          : "Tallennettu kuviin.",
+          ? `${files.length} kuvaa tallennettu albumiin Teksti-TV.`
+          : "Tallennettu kuviin, albumiin Teksti-TV.",
       );
     });
 
@@ -197,7 +221,7 @@ export const ShareSheet: React.FC<{
         <View style={styles.grab} />
         <View ref={shotRef} collapsable={false} style={styles.shot}>
           <Image
-            source={{ uri: src(renderSub) }}
+            source={{ uri: uris[renderSub] ?? remote(renderSub) }}
             resizeMode="stretch"
             style={styles.shotImage}
             onLoadEnd={() => {

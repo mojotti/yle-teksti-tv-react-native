@@ -1,12 +1,12 @@
 import React, { useContext } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { SettingsContext } from "../../providers/settings";
+import { SettingsContext, SwipeMode } from "../../providers/settings";
 import { tt, useTheme } from "../../theme/theme";
 import { Icon } from "../ui";
 import { HomeControls } from "./controls";
 import { useCoachTarget } from "./onboarding";
 
-type Key = {
+export type Key = {
   color: string;
   /** Arrow icon before or after the text (the arrows aren't in VT323). */
   lead?: string;
@@ -25,7 +25,26 @@ type Key = {
  */
 const useKeys = (c: HomeControls): Key[] => {
   const { settings } = useContext(SettingsContext);
-  const vertical = settings.swipe === "pagesVertical";
+  return buildKeys(c, settings.swipe);
+};
+
+/** The colour keys for the current page (pure, for tests). */
+export const buildKeys = (
+  c: Pick<
+    HomeControls,
+    | "prevPage"
+    | "nextPage"
+    | "subPageCount"
+    | "prevSub"
+    | "nextSub"
+    | "goPrevPage"
+    | "goNextPage"
+    | "goPrevSub"
+    | "goNextSub"
+  >,
+  swipe: SwipeMode,
+): Key[] => {
+  const vertical = swipe === "pagesVertical";
   const [pagePrev, pageNext, subPrev, subNext] = vertical
     ? ["chevron-up", "chevron-down", "chevron-back", "chevron-forward"]
     : ["chevron-back", "chevron-forward", "chevron-up", "chevron-down"];
@@ -188,9 +207,12 @@ export const SubpageRow: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
   vertical,
 }) => {
   const theme = useTheme();
-  if (c.subPageCount <= 1) {
+  const { settings } = useContext(SettingsContext);
+  // Portrait follows the setting; the landscape rail always shows it.
+  if (!vertical && !settings.showSubpageRow) {
     return null;
   }
+  const single = c.subPageCount <= 1;
   const showDots = c.subPageCount <= 8;
   return (
     <View
@@ -206,8 +228,10 @@ export const SubpageRow: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
     >
       <Pressable
         onPress={c.goPrevSub}
+        disabled={single}
         hitSlop={12}
         accessibilityLabel="Edellinen alasivu"
+        style={single && styles.disabled}
       >
         <Icon
           name={vertical ? "chevron-up" : "chevron-back"}
@@ -236,8 +260,10 @@ export const SubpageRow: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
       >{`${c.subPage}/${c.subPageCount}`}</Text>
       <Pressable
         onPress={c.goNextSub}
+        disabled={single}
         hitSlop={12}
         accessibilityLabel="Seuraava alasivu"
+        style={single && styles.disabled}
       >
         <Icon
           name={vertical ? "chevron-down" : "chevron-forward"}
@@ -250,6 +276,9 @@ export const SubpageRow: React.FC<{ c: HomeControls; vertical?: boolean }> = ({
 };
 
 const styles = StyleSheet.create({
+  disabled: {
+    opacity: 0.3,
+  },
   row: {
     flexDirection: "row",
     gap: 6,

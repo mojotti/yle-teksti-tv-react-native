@@ -97,7 +97,7 @@ export const NotFoundBand: React.FC<{ page?: string; onClose: () => void }> = ({
     <Pressable onPress={onClose} style={styles.band} accessibilityRole="alert">
       <Text
         style={[theme.number(24), styles.bandText]}
-      >{`Sivua ${page} ei ole`}</Text>
+      >{`Sivua ${page} ei löydy`}</Text>
       <Icon name="close" size={20} color="#fff" />
     </Pressable>
   );
@@ -119,7 +119,7 @@ export const StaleBanner: React.FC<{
     >
       <Icon name="cloud-offline-outline" size={16} color={tt.yellow} />
       <Text style={styles.staleText} numberOfLines={1}>
-        {`Ei yhteyttä · näytetään sivu ${formatClock(savedAt)}`}
+        {`Ei yhteyttä · tallennettu sivu ${formatClock(savedAt)}`}
       </Text>
       <Text style={styles.staleAction}>Päivitä</Text>
     </Pressable>
@@ -199,7 +199,11 @@ const errorText = (code?: number) => {
     case 503:
       return ["EI YHTEYTTÄ", "Sivua ei voitu hakea.", "Tarkista verkkoyhteys."];
     case 504:
-      return ["AIKAKATKAISU", "Sivu ei vastannut ajoissa.", "Yritä uudelleen."];
+      return [
+        "AIKAKATKAISU",
+        "Sivun haku kesti liian kauan.",
+        "Yritä uudelleen.",
+      ];
     case 401:
       return [
         "TUNNISTUS EPÄONNISTUI",

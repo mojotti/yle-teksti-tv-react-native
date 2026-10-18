@@ -177,7 +177,7 @@ struct Provider: AppIntentTimelineProvider {
       let (data, response) = try? await URLSession.shared.data(from: url),
       (response as? HTTPURLResponse)?.statusCode == 200
     {
-      image = UIImage(data: data)
+      image = UIImage(data: data).map(cropBlankEdges)
     }
     return PageEntry(
       date: .now, configured: configured, page: page, sub: shownSub, subCount: subCount, image: image)
@@ -237,7 +237,7 @@ struct PageWidgetView: View {
             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
             .clipped()
         } else {
-          Text(Shared.appId.isEmpty ? "Avaa sovellus kerran" : "Sivua ei saatu")
+          Text(Shared.appId.isEmpty ? "Avaa Teksti-TV-sovellus kerran" : "Sivua ei saatu")
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -277,4 +277,15 @@ struct TekstiTVWidget: Widget {
     .description("Näyttää valitsemasi Teksti-TV-sivun.")
     .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
   }
+}
+
+/// Yle's 720 × 432 images have an empty 18 px column on the left and row at
+/// the bottom; cutting them off centres the page (the app does the same).
+func cropBlankEdges(_ image: UIImage) -> UIImage {
+  guard let cg = image.cgImage else { return image }
+  let edge = Int((CGFloat(cg.width) / 720 * 18).rounded())
+  guard edge > 0, cg.width > edge * 2, cg.height > edge * 2,
+    let cropped = cg.cropping(to: CGRect(x: edge, y: 0, width: cg.width - edge, height: cg.height - edge))
+  else { return image }
+  return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
 }

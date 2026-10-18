@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { IconButton } from "../ui";
 import { tt, useTheme } from "../../theme/theme";
 import { HomeControls, favoriteIconName } from "./controls";
-import { useCoachTarget } from "./onboarding";
+import { TargetId, useCoachTarget } from "./onboarding";
 import { SubpageRow } from "./fastext";
 
 export const PagePill: React.FC<{ c: HomeControls; size?: number }> = ({
@@ -62,14 +62,41 @@ const FavoriteButton: React.FC<{ c: HomeControls }> = ({ c }) => {
   );
 };
 
+/** An icon button the first-run guide can point at. */
+const CoachIconButton: React.FC<
+  React.ComponentProps<typeof IconButton> & { target: TargetId }
+> = ({ target, ...props }) => {
+  const coach = useCoachTarget(target);
+  return (
+    <View ref={coach.ref} onLayout={coach.onLayout} collapsable={false}>
+      <IconButton {...props} />
+    </View>
+  );
+};
+
 /** Right-hand controls: refresh, share and the ⋯ menu. */
 const Trailing: React.FC<{ c: HomeControls }> = ({ c }) => (
   <>
-    <IconButton name="refresh-outline" label="Päivitä" onPress={c.refresh} />
+    <CoachIconButton
+      target="refresh"
+      name="refresh-outline"
+      label="Päivitä"
+      onPress={c.refresh}
+    />
     {c.share && (
-      <IconButton name="share-outline" label="Jaa sivu" onPress={c.share} />
+      <CoachIconButton
+        target="share"
+        name="share-outline"
+        label="Jaa sivu"
+        onPress={c.share}
+      />
     )}
-    <IconButton name="ellipsis-horizontal" label="Lisää" onPress={c.openMenu} />
+    <CoachIconButton
+      target="menu"
+      name="ellipsis-horizontal"
+      label="Lisää"
+      onPress={c.openMenu}
+    />
   </>
 );
 
@@ -98,7 +125,8 @@ export const Header: React.FC<{ c: HomeControls }> = ({ c }) => {
         {c.canGoBack && (
           <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
         )}
-        <IconButton
+        <CoachIconButton
+          target="home"
           name="home-outline"
           label="Etusivu"
           onPress={c.goHome}
@@ -137,7 +165,8 @@ export const Rail: React.FC<{ c: HomeControls }> = ({ c }) => {
       {c.canGoBack && (
         <IconButton name="chevron-back" label="Takaisin" onPress={c.goBack} />
       )}
-      <IconButton
+      <CoachIconButton
+        target="home"
         name="home-outline"
         label="Etusivu"
         onPress={c.goHome}

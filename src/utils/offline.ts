@@ -21,13 +21,22 @@ export interface OfflineSummary {
 const PAGE_KEY = (page: string) => `@offline:page:${page}`;
 const SUMMARY_KEY = "@offline:summary";
 
-const blobToDataUri = (blob: Blob) =>
+export const blobToDataUri = (blob: Blob) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(blob);
   });
+
+/** Downloads an image as a data: URI, so it is local when drawn. */
+export const fetchDataUri = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return blobToDataUri(await res.blob());
+};
 
 const downloadPage = async (page: string): Promise<OfflinePage> => {
   const res = await fetch(getPageJsonPath(page));

@@ -20,12 +20,13 @@ import { NavigationStatusContext } from "../providers/navigation-status";
 import { AppStateContext } from "../providers/app-state";
 import { MAX_FAVORITES, SettingsContext } from "../providers/settings";
 import { OrientationTypes, WindowContext } from "../providers/window";
+import { getNewSubPage, getPageSize, isValidPage } from "../utils";
 import {
-  getNewSubPage,
-  getPageSize,
-  getPageTitle,
-  isValidPage,
-} from "../utils";
+  addFavorite,
+  buildPageModel,
+  parsePageLink,
+  wantsFeed,
+} from "./home-model";
 import { useTheme } from "../theme/theme";
 import type { HomeScreenNavigationProp } from "../../App";
 
@@ -92,6 +93,8 @@ const HomeScreen: React.FC = () => {
   const [fromFeed, setFromFeed] = useState(false);
   const startViewApplied = React.useRef(false);
   const linkTarget = React.useRef<string>(undefined);
+  // A link can arrive before settings load; the start view must not undo it.
+  const openedFromLink = React.useRef(false);
   const [digits, setDigits] = useState("");
   const [pending, setPending] = useState<string>();
   const [notFound, setNotFound] = useState<string>();
@@ -101,28 +104,55 @@ const HomeScreen: React.FC = () => {
   const showLoading = useDelayed(isLoading);
   const hasError = !!error && error.code !== 404;
 
+  // Start view: on launch, and again whenever the setting changes.
   useEffect(() => {
-    if (loaded && !startViewApplied.current) {
-      startViewApplied.current = true;
-      if (settings.startView === "favorites" && settings.favorites.length) {
-        setFeed(true);
-      }
+    if (!loaded) {
+      return;
     }
-  }, [loaded, settings.startView, settings.favorites.length]);
+    if (!startViewApplied.current) {
+      startViewApplied.current = true;
+      setFeed(
+        wantsFeed(
+          settings.startView,
+          settings.favorites,
+          openedFromLink.current,
+        ),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
+  const startView = settings.startView;
+  // Only changes made after settings have loaded count (loading itself is
+  // handled above, and must not undo a page opened from a link).
+  const previousStartView = React.useRef<string>(undefined);
+  useEffect(() => {
+    if (!loaded) {
+      return;
+    }
+    if (
+      previousStartView.current !== undefined &&
+      previousStartView.current !== startView
+    ) {
+      setFeed(wantsFeed(startView, settings.favorites));
+    }
+    previousStartView.current = startView;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startView, loaded]);
 
   // tekstitv://page/201 (from the widget) opens that page.
   useEffect(() => {
     const open = async (url: string | null) => {
-      const match = url?.match(/^tekstitv:\/\/page\/(\d{3})(?:\/(\d+))?/);
-      if (match && isValidPage(match[1])) {
-        const sub = match[2] ?? "1";
-        linkTarget.current = match[1];
+      const link = parsePageLink(url);
+      if (link) {
+        linkTarget.current = link.page;
+        openedFromLink.current = true;
         setFeed(false);
         setKeypadOpen(false);
-        setPending(match[1]);
-        await fetchPage(match[1], sub, false, true);
-        if (sub !== "1") {
-          setSubPage(sub);
+        setPending(link.page);
+        await fetchPage(link.page, link.subPage, false, true);
+        if (link.subPage !== "1") {
+          setSubPage(link.subPage);
         }
       }
     };
@@ -227,9 +257,18 @@ const HomeScreen: React.FC = () => {
     return () => sub.remove();
   }, [goBack, navigation]);
 
-  const subPageCount = Number(textTvResponse?.page.subPageCount || 1);
+  const model = buildPageModel({
+    page,
+    subPage,
+    pending,
+    keypadOpen,
+    digits,
+    response: textTvResponse,
+    error,
+  });
+  const { subPageCount } = model;
   const changeSub = (direction: "next" | "back") => {
-    const target = getNewSubPage(Number(subPage), subPageCount, direction);
+    const target = getNewSubPage(model.subPage, subPageCount, direction);
     if (subPageCount <= 1 || !target) {
       return;
     }
@@ -237,24 +276,11 @@ const HomeScreen: React.FC = () => {
     setSubPage(String(target));
   };
 
-  const prevPage = textTvResponse?.page.prevPage;
-  const nextPage = textTvResponse?.page.nextPage;
-  const isFavorite = settings.favorites.includes(page);
+  const isFavorite = settings.favorites.includes(model.page);
 
   const c: HomeControls = {
-    pillText: keypadOpen ? (digits + "___").slice(0, 3) : (pending ?? page),
+    ...model,
     pillActive: keypadOpen,
-    page,
-    title:
-      textTvResponse && !pending && !keypadOpen
-        ? getPageTitle(textTvResponse)
-        : undefined,
-    subPage: Number(subPage),
-    subPageCount,
-    prevPage,
-    nextPage,
-    prevSub: getNewSubPage(Number(subPage), subPageCount, "back"),
-    nextSub: getNewSubPage(Number(subPage), subPageCount, "next"),
     isLoading,
     canGoBack,
     isFavorite,
@@ -262,26 +288,27 @@ const HomeScreen: React.FC = () => {
     goBack: () => goBack(),
     goHome: () => goTo("100"),
     goTo,
-    goPrevPage: () => prevPage && goTo(prevPage),
-    goNextPage: () => nextPage && goTo(nextPage),
+    goPrevPage: () => model.prevPage && goTo(model.prevPage),
+    goNextPage: () => model.nextPage && goTo(model.nextPage),
     goPrevSub: () => changeSub("back"),
     goNextSub: () => changeSub("next"),
     openKeypad: () => setKeypadOpen(true),
     toggleFavorite: () =>
       update({
         favorites: isFavorite
-          ? settings.favorites.filter((f) => f !== page)
-          : settings.favorites.length < MAX_FAVORITES
-            ? [...settings.favorites, page]
-            : settings.favorites,
+          ? settings.favorites.filter((f) => f !== model.page)
+          : addFavorite(settings.favorites, model.page, MAX_FAVORITES),
       }),
     openMenu: () => setMenuOpen(true),
     share: textTvResponse && !hasError ? () => setShareOpen(true) : undefined,
-    refresh: () => fetchPage(page, subPage, true),
+    refresh: () =>
+      hasError
+        ? fetchPage(error!.page, "1", true, true)
+        : fetchPage(page, subPage, true),
   };
 
   const onSwipe = (direction: SwipeDirections) => {
-    if (hasError || keypadOpen) {
+    if (keypadOpen) {
       return;
     }
     const vertical = settings.swipe === "pagesVertical";
@@ -307,7 +334,7 @@ const HomeScreen: React.FC = () => {
     }
     const reserved = isLandscape
       ? 18
-      : subPageCount > 1
+      : settings.showSubpageRow
         ? SUBPAGE_ROW_HEIGHT
         : 0;
     return getPageSize(
@@ -316,7 +343,13 @@ const HomeScreen: React.FC = () => {
       area.height - reserved,
       isLandscape,
     );
-  }, [area, isLandscape, subPageCount, settings.screenRatio, theme.pageInset]);
+  }, [
+    area,
+    isLandscape,
+    settings.showSubpageRow,
+    settings.screenRatio,
+    theme.pageInset,
+  ]);
 
   const menuItems = [
     ...(settings.favorites.length
@@ -366,11 +399,7 @@ const HomeScreen: React.FC = () => {
             onPress={() => setKeypadOpen(true)}
           />
         )}
-        {isLandscape ? (
-          <FastextTicks c={c} />
-        ) : (
-          !hasError && <SubpageRow c={c} />
-        )}
+        {isLandscape ? <FastextTicks c={c} /> : <SubpageRow c={c} />}
       </Pressable>
     </GestureRecognizer>
   );
@@ -402,7 +431,7 @@ const HomeScreen: React.FC = () => {
             />
             {pageArea}
           </View>
-          {settings.showDock && <DockColumn onPageChange={goTo} />}
+          {loaded && settings.showDock && <DockColumn onPageChange={goTo} />}
         </View>
       ) : (
         <>
@@ -432,7 +461,7 @@ const HomeScreen: React.FC = () => {
               />
               {pageArea}
               <FastextRow c={c} />
-              {settings.showDock && <Dock onPageChange={goTo} />}
+              {loaded && settings.showDock && <Dock onPageChange={goTo} />}
             </>
           )}
         </>

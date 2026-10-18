@@ -115,6 +115,7 @@ const classifyError = (e: unknown): number => {
 export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
   const cache = useRef<Record<string, CacheItem>>({});
   const requestId = useRef(0);
+  const shownImg = useRef<string | undefined>(undefined);
   const [imgSrc, setImgSrc] = useState<string>();
   const [error, setError] = useState<PageFetchError>();
   const [textTvResponse, setTextTvResponse] = useState<TextTvResponse>();
@@ -190,6 +191,12 @@ export const PageProvider: FunctionComponent<PropsWithChildren> = (props) => {
 
     const show = (item: CacheItem, savedAt?: number) => {
       setStale(savedAt ? { page, savedAt } : undefined);
+      // The same image again never fires onLoadEnd, so it can't end the
+      // loading state; end it here (e.g. refreshing offline).
+      if (item.imgSrc === shownImg.current) {
+        setImgLoadingStatus(false);
+      }
+      shownImg.current = item.imgSrc;
       setImgSrc(item.imgSrc);
       setTextTvResponse(item.textTvResponse);
       if (setNewPage) {

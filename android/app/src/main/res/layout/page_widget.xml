@@ -6,14 +6,17 @@
     android:background="@drawable/widget_background"
     android:clipToOutline="true"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:paddingHorizontal="6dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
 
+    <!-- Header: page, title, subpage/time and the colour keys -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="28dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingBottom="4dp">
+        android:paddingStart="4dp">
 
         <TextView
             android:id="@+id/widget_page"
@@ -29,7 +32,7 @@
             android:id="@+id/widget_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
@@ -40,21 +43,29 @@
             android:id="@+id/widget_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
             android:textColor="#FF8A8F98"
             android:textSize="11sp" />
+
+        <ImageView android:id="@+id/key_prev_page" style="@style/WidgetKey" android:background="@drawable/widget_key_red" android:src="@drawable/widget_arrow_left" android:contentDescription="@string/widget_key_left" />
+        <ImageView android:id="@+id/key_next_page" style="@style/WidgetKey" android:background="@drawable/widget_key_green" android:src="@drawable/widget_arrow_right" android:contentDescription="@string/widget_key_right" />
+        <ImageView android:id="@+id/key_prev_sub" style="@style/WidgetKey" android:background="@drawable/widget_key_yellow" android:src="@drawable/widget_arrow_up" android:contentDescription="@string/widget_key_up" />
+        <ImageView android:id="@+id/key_next_sub" style="@style/WidgetKey" android:background="@drawable/widget_key_cyan" android:src="@drawable/widget_arrow_down" android:contentDescription="@string/widget_key_down" />
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="4dp"
         android:layout_weight="1">
 
+        <!-- Stretched to fill, like the app's taller page sizes -->
         <ImageView
             android:id="@+id/widget_image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:contentDescription="@string/widget_name"
-            android:scaleType="fitCenter" />
+            android:scaleType="fitXY" />
 
         <TextView
             android:id="@+id/widget_message"
@@ -65,17 +76,4 @@
             android:textSize="12sp"
             android:visibility="gone" />
     </FrameLayout>
-
-    <!-- Colour keys: previous/next page, previous/next subpage -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="26dp"
-        android:layout_marginTop="6dp"
-        android:orientation="horizontal">
-
-        <TextView android:id="@+id/key_prev_page" style="@style/WidgetKey" android:background="@drawable/widget_key_red" android:text="‹" android:textColor="#FFFFFFFF" />
-        <TextView android:id="@+id/key_next_page" style="@style/WidgetKey" android:background="@drawable/widget_key_green" android:text="›" />
-        <TextView android:id="@+id/key_prev_sub" style="@style/WidgetKey" android:background="@drawable/widget_key_yellow" android:text="▲" />
-        <TextView android:id="@+id/key_next_sub" style="@style/WidgetKey" android:background="@drawable/widget_key_cyan" android:text="▼" />
-    </LinearLayout>
 </LinearLayout>
