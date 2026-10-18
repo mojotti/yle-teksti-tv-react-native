@@ -22,6 +22,8 @@ interface NavigationStatusContext {
   pushHistory: (page: string) => void;
   /** Drops the current page and returns the one before it, if any. */
   popHistory: () => string | undefined;
+  /** Starts a new history from one page (e.g. a page opened from the feed). */
+  resetHistory: (page: string) => void;
 }
 
 export const NavigationStatusContext = createContext(
@@ -52,6 +54,11 @@ export const NavigationStatusProvider: React.FC<PropsWithChildren> = (
     return historyRef.current[historyRef.current.length - 1];
   }, []);
 
+  const resetHistory = useCallback((p: string) => {
+    historyRef.current = [p];
+    setHistory(historyRef.current);
+  }, []);
+
   return (
     <NavigationStatusContext.Provider
       value={{
@@ -66,6 +73,7 @@ export const NavigationStatusProvider: React.FC<PropsWithChildren> = (
         history,
         pushHistory,
         popHistory,
+        resetHistory,
       }}
     >
       {props.children}

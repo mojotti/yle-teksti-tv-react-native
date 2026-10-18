@@ -58,6 +58,9 @@ export const isDefined = <T>(value: T | undefined): value is T => {
 
 const defaultLinks = ["100", "200", "300", "400", "800"];
 
+/** Whether getLinkPages fell back to the main sections (page has no links). */
+export const isDefaultLinks = (links: string[]) => links === defaultLinks;
+
 const getRangeOfNumbers = (start: number, end: number): number[] => {
   let mutableNumber = start;
   let mutableBlackList: number[] = [];
@@ -192,7 +195,8 @@ const ABBREVIATIONS = new Set([
 ]);
 
 const recaseSegment = (segment: string, first: boolean) => {
-  if (ABBREVIATIONS.has(segment)) {
+  // Known abbreviations and codes with digits (TV1, MTV3) stay as they are.
+  if (ABBREVIATIONS.has(segment) || /\d/.test(segment)) {
     return segment;
   }
   const lower = segment.toLocaleLowerCase("fi");
@@ -204,11 +208,15 @@ const recaseSegment = (segment: string, first: boolean) => {
 /**
  * Teletext headings are often all caps ("NBA-KORIPALLO"). Those are turned
  * into sentence case, keeping known abbreviations ("NBA-koripallo").
- * Titles with any lower-case letters are left as they are.
+ * Titles with any lower-case letters keep their casing, apart from a
+ * capital first letter ("på svenska" → "På svenska").
  */
 export const prettyTitle = (title: string): string => {
-  if (title !== title.toLocaleUpperCase("fi") || !/\p{L}/u.test(title)) {
+  if (!/\p{L}/u.test(title)) {
     return title;
+  }
+  if (title !== title.toLocaleUpperCase("fi")) {
+    return title.charAt(0).toLocaleUpperCase("fi") + title.slice(1);
   }
   let first = true;
   // Split on spaces, hyphens and slashes, keeping the separators.
@@ -226,6 +234,41 @@ export const prettyTitle = (title: string): string => {
 };
 
 /** The section heading in a subpage's first lines ("ULKOMAAT", "NHL/ITÄ"). */
+const WEEKDAYS =
+  /^(maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|måndag|tisdag|onsdag|torsdag|fredag|lördag|söndag)$/i;
+
+/**
+ * Cleans one heading candidate from a page's top lines, or returns "" when
+ * it is not a heading: weekday names, "Yle", web addresses, subpage
+ * counters, dates and times. Letter-spaced words ("V E I K K A U S") are
+ * joined back together.
+ */
+export const cleanHeading = (part: string): string => {
+  let text = part.trim();
+  if (/^(\S )+\S$/.test(text)) {
+    text = text.replace(/ /g, "");
+  }
+  text = text
+    // Trailing dates, times and weekdays: "Pörssi 16.10. 18:34".
+    .replace(/(\s+(\d{1,2}\.\d{1,2}\.(\d{2,4})?|\d{1,2}[:.]\d{2}|klo))+$/i, "")
+    .trim();
+  const words = text.split(/\s+/);
+  while (words.length > 1 && WEEKDAYS.test(words[words.length - 1])) {
+    words.pop();
+  }
+  text = words.join(" ");
+  if (
+    !/\p{L}/u.test(text) ||
+    WEEKDAYS.test(text) ||
+    /^yle$/i.test(text) ||
+    /(\.fi|\.com|www\.)/i.test(text) ||
+    /^\d+\/\d+$/.test(text)
+  ) {
+    return "";
+  }
+  return text;
+};
+
 const subPageHeading = (response: TextTvResponse, subPage: number) => {
   const lines =
     response.page.subPages[subPage - 1]?.content
@@ -234,8 +277,8 @@ const subPageHeading = (response: TextTvResponse, subPage: number) => {
   for (const line of lines) {
     const part = (line.text ?? "")
       .split(/\s{2,}/)
-      .map((x) => x.trim())
-      .find((x) => x && !/^\d+\/\d+$/.test(x));
+      .map(cleanHeading)
+      .find(Boolean);
     if (part) {
       return part;
     }

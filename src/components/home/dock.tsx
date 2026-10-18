@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { SettingsContext } from "../../providers/settings";
 import { PageContext } from "../../providers/page";
 import { NavigationStatusContext } from "../../providers/navigation-status";
-import { getLinkPages } from "../../utils";
+import { getLinkPages, isDefaultLinks } from "../../utils";
 import { useTheme } from "../../theme/theme";
 import { favoriteIconName } from "./controls";
 import { Chip } from "../ui";
@@ -36,15 +36,17 @@ const useSections = (): Section[] => {
     settings.favoriteIcon === "none"
       ? undefined
       : favoriteIconName(settings.favoriteIcon, false);
+  // Pages without links fall back to the main sections; say so.
+  const quick = isDefaultLinks(pageLinks);
   if (!favorites.length) {
-    return [{ title: "Sivun linkit", pages: pageLinks }];
+    return [{ title: quick ? "Pikalinkit" : "Sivun linkit", pages: pageLinks }];
   }
   if (settings.favoritesReplaceLinks) {
     return [{ title: "Suosikit", pages: favorites, edit: true, icon }];
   }
   return [
     { title: "Suosikit", pages: favorites, edit: true, icon },
-    { title: "Tällä sivulla", pages: pageLinks },
+    { title: quick ? "Pikalinkit" : "Tällä sivulla", pages: pageLinks },
   ];
 };
 
@@ -114,9 +116,25 @@ const ChipScroller: React.FC<{
   onPageChange: (page: string) => void;
 }> = ({ pages, icon, current, onPageChange }) => {
   const ref = useRef<ScrollView>(null);
+  // Chip positions, so the current page's chip can be scrolled into view.
+  const positions = useRef<Record<string, number>>({});
+  const reveal = (animated: boolean) => {
+    const x = positions.current[current];
+    ref.current?.scrollTo({
+      x: x === undefined ? 0 : Math.max(0, x - 16),
+      animated,
+    });
+  };
   useEffect(() => {
-    ref.current?.scrollTo({ x: 0, animated: false });
+    reveal(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pages]);
+  useEffect(() => {
+    if (positions.current[current] !== undefined) {
+      reveal(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
   return (
     <ScrollView
       ref={ref}
@@ -125,13 +143,22 @@ const ChipScroller: React.FC<{
       contentContainerStyle={styles.chips}
     >
       {pages.map((p) => (
-        <Chip
-          icon={icon}
+        <View
           key={p}
-          page={p}
-          current={p === current}
-          onPress={() => onPageChange(p)}
-        />
+          onLayout={(e) => {
+            positions.current[p] = e.nativeEvent.layout.x;
+            if (p === current) {
+              reveal(false);
+            }
+          }}
+        >
+          <Chip
+            icon={icon}
+            page={p}
+            current={p === current}
+            onPress={() => onPageChange(p)}
+          />
+        </View>
       ))}
     </ScrollView>
   );

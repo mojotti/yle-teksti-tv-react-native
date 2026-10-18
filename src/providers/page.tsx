@@ -84,7 +84,8 @@ type CacheItem = {
 };
 
 const CACHE_MS = 3 * 60 * 1000;
-const PAGE_NAMES_KEY = "@pageNames";
+// Bumped when the title logic changes, so stored titles are fetched again.
+const PAGE_NAMES_KEY = "@pageNames.v2";
 
 export const PageContext = createContext({} as ContextItem);
 

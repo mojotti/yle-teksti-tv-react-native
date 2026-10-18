@@ -4,6 +4,7 @@ import {
   getPageSize,
   getPageTitle,
   getPageWebUrl,
+  cleanHeading,
   isValidPage,
   prettyTitle,
 } from "../src/utils";
@@ -101,6 +102,100 @@ describe("prettyTitle", () => {
     expect(prettyTitle("Uutiset")).toBe("Uutiset");
     expect(prettyTitle("")).toBe("");
     expect(prettyTitle("123")).toBe("123");
+  });
+});
+
+describe("getPageTitle with real page headers", () => {
+  // Top lines as Yle's API returned them (2026-10-18), with the page name.
+  it.each<[string, (string | undefined)[], string, string]>([
+    [
+      "102: heading is graphics, only the weekday is text",
+      [undefined, "                           SUNNUNTAI    ", undefined],
+      "Kotimaa",
+      "Kotimaa",
+    ],
+    [
+      "130",
+      [undefined, "                            SUNNUNTAI   ", undefined],
+      "Ulkomaat",
+      "Ulkomaat",
+    ],
+    [
+      "101: only the Yle logo text",
+      [undefined, "   Yle                                  ", undefined],
+      "",
+      "",
+    ],
+    ["103", ["   KOTIMAA         YLE  SUNNUNTAI       "], "", "Kotimaa"],
+    [
+      "175: date and time after the heading",
+      [
+        "   Helsingin Pörssi 16.10. 18:34        ",
+        undefined,
+        "         P Ö R S S I S I V U T          ",
+      ],
+      "Pörssisivut",
+      "Helsingin Pörssi",
+    ],
+    [
+      "201: web address next to the heading",
+      ["     URHEILU          yle.fi/urheilu    "],
+      "Uutiset",
+      "Urheilu",
+    ],
+    [
+      "301: weekday and date after the channel",
+      [
+        "                                    1/2 ",
+        "   TV1            Sunnuntai 18.10.      ",
+      ],
+      "YLE TV1",
+      "TV1",
+    ],
+    [
+      "401",
+      [
+        "                                    1/3 ",
+        "            Ilmatieteen laitos 18.10.   ",
+      ],
+      "",
+      "Ilmatieteen laitos",
+    ],
+    [
+      "470: letter-spaced heading",
+      ["       V E I K K A U S S I V U T        "],
+      "Veikkaus",
+      "Veikkaussivut",
+    ],
+    ["501", ["   Etelä-Karjala       SUNNUNTAI    1/5 "], "", "Etelä-Karjala"],
+    [
+      "700: only a web address",
+      [undefined, "                         svenska.yle.fi ", undefined],
+      "på svenska",
+      "På svenska",
+    ],
+    [
+      "701: Swedish weekday",
+      ["   HUVUDNYHETER  INDEX 700 SÖNDAG   1/4 "],
+      "",
+      "Huvudnyheter",
+    ],
+    [
+      "890: a lone dot",
+      [undefined, "                                      . ", undefined],
+      "",
+      "",
+    ],
+  ])("%s", (_, text, name, title) => {
+    expect(getPageTitle(response({ name, subPages: [{ text }] }))).toBe(title);
+  });
+
+  it("ignores non-headings", () => {
+    expect(cleanHeading("SUNNUNTAI")).toBe("");
+    expect(cleanHeading("Yle")).toBe("");
+    expect(cleanHeading("1/4")).toBe("");
+    expect(cleanHeading("17.10.")).toBe("");
+    expect(cleanHeading("yle.fi/urheilu")).toBe("");
   });
 });
 

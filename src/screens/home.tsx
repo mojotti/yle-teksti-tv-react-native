@@ -79,7 +79,15 @@ const HomeScreen: React.FC = () => {
     stale,
   } = useContext(PageContext);
   const nav = useContext(NavigationStatusContext);
-  const { page, subPage, setSubPage, history, pushHistory, popHistory } = nav;
+  const {
+    page,
+    subPage,
+    setSubPage,
+    history,
+    pushHistory,
+    popHistory,
+    resetHistory,
+  } = nav;
   const { appState } = useContext(AppStateContext);
   const { settings, loaded, update } = useContext(SettingsContext);
   const { orientation } = useContext(WindowContext);
@@ -242,9 +250,16 @@ const HomeScreen: React.FC = () => {
     return false;
   }, [popHistory, goTo, feed, fromFeed]);
 
-  const openFromFeed = async (target: string, sub: string) => {
+  // Leaving the feed for a page: back from there returns to the feed, not to
+  // pages seen before it (such as page 100, loaded behind the feed).
+  const leaveFeed = (target: string) => {
     setFeed(false);
     setFromFeed(true);
+    resetHistory(target);
+  };
+
+  const openFromFeed = async (target: string, sub: string) => {
+    leaveFeed(target);
     setPending(target);
     await fetchPage(target, sub, false, true);
     setSubPage(sub);
@@ -439,7 +454,7 @@ const HomeScreen: React.FC = () => {
             <>
               <FeedHeader
                 onHome={() => {
-                  setFeed(false);
+                  leaveFeed("100");
                   goTo("100");
                 }}
                 onKeypad={() => setKeypadOpen(true)}
@@ -472,7 +487,9 @@ const HomeScreen: React.FC = () => {
         favorites={settings.favorites}
         onDigits={setDigits}
         onSubmit={(p) => {
-          setFeed(false);
+          if (feed) {
+            leaveFeed(p);
+          }
           goTo(p);
         }}
         onClose={() => setKeypadOpen(false)}

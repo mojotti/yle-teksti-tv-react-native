@@ -105,7 +105,8 @@ const glass: Theme = {
   textMuted: "rgba(255,255,255,0.6)",
   accent: "#ffffff",
   onAccent: "#000000",
-  sheet: "rgba(28,30,38,0.94)",
+  // Opaque: the dock behind would otherwise show through the keys.
+  sheet: "#1c1e26",
   scrim: "rgba(0,0,0,0.4)",
   group: "rgba(255,255,255,0.07)",
   separator: "rgba(255,255,255,0.08)",
