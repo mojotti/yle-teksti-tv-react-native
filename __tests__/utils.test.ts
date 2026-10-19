@@ -5,6 +5,7 @@ import {
   getPageTitle,
   getPageWebUrl,
   cleanHeading,
+  isTabletScreen,
   isValidPage,
   prettyTitle,
 } from "../src/utils";
@@ -75,6 +76,21 @@ describe("getPageSize", () => {
     expect(getPageSize("tall", 300, 300, true)).toEqual({
       width: 300,
       height: 225,
+    });
+  });
+
+  it("shrinks the page for the smaller tablet sizes", () => {
+    expect(getPageSize("square", 1000, 1600, false, 0.7)).toEqual({
+      width: 700,
+      height: 700,
+    });
+    expect(getPageSize("full", 1000, 1600, false, 0.5)).toEqual({
+      width: 500,
+      height: 800,
+    });
+    expect(getPageSize("tv", 1600, 900, true, 0.5)).toEqual({
+      width: 600,
+      height: 450,
     });
   });
 
@@ -299,5 +315,14 @@ describe("getLinkPages", () => {
       "400",
       "800",
     ]);
+  });
+});
+
+describe("isTabletScreen", () => {
+  it("is true from 600 dp on the short side, in either orientation", () => {
+    expect(isTabletScreen({ width: 430, height: 932 })).toBe(false);
+    expect(isTabletScreen({ width: 600, height: 960 })).toBe(true);
+    expect(isTabletScreen({ width: 1366, height: 1024 })).toBe(true);
+    expect(isTabletScreen(undefined)).toBe(false);
   });
 });

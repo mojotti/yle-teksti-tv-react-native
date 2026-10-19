@@ -19,6 +19,8 @@ export type FavoriteIcon = "heart" | "star" | "none";
 export type SwipeMode = "pagesHorizontal" | "pagesVertical";
 /** What the bottom bar (dock) lists. */
 export type DockContent = "favorites" | "links" | "both";
+/** Share of the available width the page may use on tablets, in percent. */
+export type TabletPageWidth = 100 | 85 | 70;
 
 export interface Settings {
   favorites: string[];
@@ -30,6 +32,8 @@ export interface Settings {
   screenRatio: ScreenRatio;
   /** Favourites feed cards follow screenRatio (and landscape 4:3). */
   feedUsesPageSize: boolean;
+  /** Tablets only: a smaller page, centred. Ignored on phones. */
+  tabletPageWidth: TabletPageWidth;
   swipe: SwipeMode;
   pageLinks: boolean;
   highlightScreenLinks: boolean;
@@ -54,6 +58,7 @@ export const defaultSettings: Settings = {
   ambientGlow: true,
   screenRatio: "square",
   feedUsesPageSize: false,
+  tabletPageWidth: 100,
   swipe: "pagesHorizontal",
   pageLinks: true,
   highlightScreenLinks: false,

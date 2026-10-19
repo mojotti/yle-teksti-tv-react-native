@@ -16,9 +16,11 @@ import {
   ScreenRatio,
   Settings,
   SettingsContext,
+  TabletPageWidth,
 } from "../providers/settings";
+import { WindowContext } from "../providers/window";
 import { PageContext } from "../providers/page";
-import { prettyTitle, ratioHeights } from "../utils";
+import { isTabletScreen, prettyTitle, ratioHeights } from "../utils";
 import { formatClock } from "../utils/offline";
 import { ThemeName, themeLabels, themes, tt, useTheme } from "../theme/theme";
 import {
@@ -43,6 +45,8 @@ export const SettingsScreen: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { settings, update } = useContext(SettingsContext);
+  const { deviceScreen } = useContext(WindowContext);
+  const isTablet = isTabletScreen(deviceScreen);
   const [adding, setAdding] = useState(false);
   // Android widget whose page is being changed with the keypad.
   const [editingWidget, setEditingWidget] = useState<number>();
@@ -125,6 +129,21 @@ export const SettingsScreen: React.FC = () => {
             value={settings.screenRatio}
             onChange={set("screenRatio")}
           />
+          {isTablet && (
+            <Row label="Sivun leveys" detail="Pienempi sivu keskellä näyttöä">
+              <Segmented
+                value={String(settings.tabletPageWidth)}
+                onChange={(v) =>
+                  update({ tabletPageWidth: Number(v) as TabletPageWidth })
+                }
+                options={[
+                  { value: "100", label: "100 %" },
+                  { value: "85", label: "85 %" },
+                  { value: "70", label: "70 %" },
+                ]}
+              />
+            </Row>
+          )}
           <Row label="Käytä samaa kokoa suosikkinäkymässä">
             <Toggle
               value={settings.feedUsesPageSize}

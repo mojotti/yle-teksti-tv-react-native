@@ -20,7 +20,7 @@ import { AppStateContext } from "../../providers/app-state";
 import { PageContext } from "../../providers/page";
 import { ScreenRatio, SettingsContext } from "../../providers/settings";
 import { WindowContext, OrientationTypes } from "../../providers/window";
-import { ratioHeights } from "../../utils";
+import { isTabletScreen, ratioHeights } from "../../utils";
 import { getPageImgSrc, getPageTitle } from "../../utils";
 import { TextTvResponse } from "../../types/response";
 import { tt, useTheme } from "../../theme/theme";
@@ -132,16 +132,23 @@ export const FavoritesFeed: React.FC<{
     </Pressable>
   ) : null;
 
-  const { orientation } = useContext(WindowContext);
+  const { orientation, deviceScreen } = useContext(WindowContext);
+  // On tablets the cards use the same share of the width as the page view,
+  // centred.
+  const scale = isTabletScreen(deviceScreen)
+    ? settings.tabletPageWidth / 100
+    : 1;
+  const area = { width: size.width * scale, height: size.height };
+  const sideSpace = (size.width - area.width) / 2;
   const ratio = cardRatio(
     settings.feedUsesPageSize ? settings.screenRatio : undefined,
     orientation === OrientationTypes.Landscape,
-    size,
+    area,
     theme.pageInset,
   );
-  const columns = columnsFor(size.width, size.height, theme.pageInset, ratio);
+  const columns = columnsFor(area.width, area.height, theme.pageInset, ratio);
   const cardWidth =
-    (size.width - theme.pageInset * 2 - GAP * (columns - 1)) / columns;
+    (area.width - theme.pageInset * 2 - GAP * (columns - 1)) / columns;
 
   if (!settings.favorites.length) {
     return (
@@ -169,7 +176,7 @@ export const FavoritesFeed: React.FC<{
           height: e.nativeEvent.layout.height,
         })
       }
-      contentContainerStyle={styles.list}
+      contentContainerStyle={[styles.list, { paddingHorizontal: sideSpace }]}
       columnWrapperStyle={
         columns > 1
           ? { gap: GAP, paddingHorizontal: theme.pageInset }

@@ -20,7 +20,12 @@ import { NavigationStatusContext } from "../providers/navigation-status";
 import { AppStateContext } from "../providers/app-state";
 import { MAX_FAVORITES, SettingsContext } from "../providers/settings";
 import { OrientationTypes, WindowContext } from "../providers/window";
-import { getNewSubPage, getPageSize, isValidPage } from "../utils";
+import {
+  getNewSubPage,
+  getPageSize,
+  isTabletScreen,
+  isValidPage,
+} from "../utils";
 import {
   addFavorite,
   buildPageModel,
@@ -91,7 +96,9 @@ const HomeScreen: React.FC = () => {
   } = nav;
   const { appState } = useContext(AppStateContext);
   const { settings, loaded, update } = useContext(SettingsContext);
-  const { orientation } = useContext(WindowContext);
+  const { orientation, deviceScreen } = useContext(WindowContext);
+  const isTablet = isTabletScreen(deviceScreen);
+  const pageScale = isTablet ? settings.tabletPageWidth / 100 : 1;
   const isLandscape = orientation === OrientationTypes.Landscape;
 
   const [keypadOpen, setKeypadOpen] = useState(false);
@@ -376,10 +383,12 @@ const HomeScreen: React.FC = () => {
       area.width - theme.pageInset * 2,
       area.height - reserved,
       isLandscape,
+      pageScale,
     );
   }, [
     area,
     isLandscape,
+    pageScale,
     settings.showSubpageRow,
     settings.screenRatio,
     theme.pageInset,
@@ -413,7 +422,11 @@ const HomeScreen: React.FC = () => {
   const pageArea = (
     <GestureRecognizer onSwipe={onSwipe} style={styles.pageArea}>
       <Pressable
-        style={[styles.pageMeasure, isLandscape && styles.centered]}
+        style={[
+          styles.pageMeasure,
+          // A shrunk tablet page sits in the middle, not at the top.
+          (isLandscape || pageScale < 1) && styles.centered,
+        ]}
         onLayout={(e) => setArea(e.nativeEvent.layout)}
         // The empty space around the page opens the keypad too, as in 2.4.
         onPress={() => !hasError && setKeypadOpen(true)}

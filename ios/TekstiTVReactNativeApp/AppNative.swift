@@ -41,6 +41,6 @@ enum OrientationLock {
   static var portraitOnly = false
 
   static var mask: UIInterfaceOrientationMask {
-    portraitOnly ? .portrait : .allButUpsideDown
+    portraitOnly ? .portrait : (UIDevice.current.userInterfaceIdiom == .pad ? .all : .allButUpsideDown)
   }
 }

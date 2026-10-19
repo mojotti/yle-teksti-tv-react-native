@@ -137,20 +137,28 @@ export const ratioHeights: Record<Exclude<ScreenRatio, "full">, number> = {
   tall: 4 / 3,
 };
 
+/** Tablets are screens at least 600 dp on their short side (Android's sw600dp). */
+export const isTabletScreen = (screen?: { width: number; height: number }) =>
+  !!screen && Math.min(screen.width, screen.height) >= 600;
+
 /**
  * Size of the teletext page inside the space available for it. Portrait
  * uses the full width and the chosen preset's height; landscape keeps the
- * TV 4:3 shape so letters are never stretched.
+ * TV 4:3 shape so letters are never stretched. `scale` (0–1) shrinks the
+ * space first, for the smaller page option on tablets.
  */
 export const getPageSize = (
   ratio: ScreenRatio,
-  availableWidth: number,
-  availableHeight: number,
+  fullWidth: number,
+  fullHeight: number,
   isLandscape: boolean,
+  scale = 1,
 ): { width: number; height: number } => {
-  if (availableWidth <= 0 || availableHeight <= 0) {
+  if (fullWidth <= 0 || fullHeight <= 0) {
     return { width: 0, height: 0 };
   }
+  const availableWidth = fullWidth * scale;
+  const availableHeight = fullHeight * scale;
 
   if (isLandscape) {
     const width = Math.min(availableWidth, (availableHeight * 4) / 3);
