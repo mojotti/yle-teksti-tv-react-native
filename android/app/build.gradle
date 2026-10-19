@@ -82,7 +82,7 @@ android {
         applicationId "com.teksti_tv_mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 39
+        versionCode 40
         versionName "3.0.0"
     }
     signingConfigs {
