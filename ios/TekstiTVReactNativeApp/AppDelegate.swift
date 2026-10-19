@@ -53,6 +53,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
           let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
 
     window = UIWindow(windowScene: windowScene)
+    // The app is always dark. Set here rather than in Info.plist, so the
+    // launch screen still follows the system and shows the matching icon.
+    window?.overrideUserInterfaceStyle = .dark
 
     // A widget tap launches with a tekstitv:// link; RN reads it as the initial URL.
     let launchOptions = connectionOptions.urlContexts.first.map {
@@ -95,6 +98,10 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 // decides: light content, hidden in landscape.
 class RootViewController: UIViewController {
   override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+
+  // react-native-screens hands the style to its screens, whose "auto" style
+  // follows the system and turns the text black in light mode. Keep it here.
+  override var childForStatusBarStyle: UIViewController? { nil }
 
   override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
     OrientationLock.mask

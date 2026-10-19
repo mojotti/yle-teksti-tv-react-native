@@ -337,7 +337,8 @@ def save(img, path):
 
 def ios():
     base = os.path.join(ROOT, "ios/TekstiTVReactNativeApp/Images.xcassets/AppIcon.appiconset")
-    save(flat(page("ios"), 1024), os.path.join(base, "AppIcon-1024.png"))
+    light = flat(page("ios"), 1024)
+    save(light, os.path.join(base, "AppIcon-1024.png"))
     dark = flat(page("ios", dark=True), 1024)
     save(dark, os.path.join(base, "AppIcon-1024-dark.png"))
     # Tinted icons are coloured by iOS from luminance: light lettering on black works best.
@@ -353,6 +354,21 @@ def ios():
         "info": {"author": "xcode", "version": 1},
     }
     write(os.path.join(base, "Contents.json"), json.dumps(contents, indent=2) + "\n")
+
+    # Launch screen image, 120 pt with iOS-like rounded corners: the light icon
+    # in light mode and the dark one in dark mode, like the home screen.
+    launch = os.path.join(ROOT, "ios/TekstiTVReactNativeApp/Images.xcassets/LaunchIcon.imageset")
+    images = []
+    for name, img, look in (("LaunchIcon", light, None), ("LaunchIcon-dark", dark, "dark")):
+        for k in (1, 2, 3):
+            fn = "%s@%dx.png" % (name, k)
+            save(masked(img.resize((120 * k, 120 * k), Image.LANCZOS), 0.225), os.path.join(launch, fn))
+            entry = {"filename": fn, "idiom": "universal", "scale": "%dx" % k}
+            if look:
+                entry["appearances"] = [{"appearance": "luminosity", "value": look}]
+            images.append(entry)
+    write(os.path.join(launch, "Contents.json"), json.dumps(
+        {"images": images, "info": {"author": "xcode", "version": 1}}, indent=2) + "\n")
 
 
 # An adaptive icon layer is 108 dp; launchers show the middle 72 dp.
