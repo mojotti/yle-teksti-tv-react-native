@@ -5,6 +5,7 @@
  *   node scripts/play-publish.mjs check     access test, changes nothing
  *   node scripts/play-publish.mjs bundle    release AAB to the internal track
  *   node scripts/play-publish.mjs listing   store texts, screenshots, feature graphic
+ *   node scripts/play-publish.mjs production 0.2   internal release to 20 % of users
  *
  * Key: ~/.android/play-service-account.json (or PLAY_KEY=path). The service
  * account needs "Release apps to testing tracks" and, for listing, "Manage
@@ -148,7 +149,32 @@ const listing = () =>
     console.log("Feature graphic");
   });
 
-const commands = { check, bundle, listing };
+/**
+ * Puts the internal track's release on production for a share of users
+ * (0.2 = 20 %). Run again with a bigger share, or 1 to release to everyone.
+ */
+const production = () =>
+  withEdit(true, async (url) => {
+    const fraction = Number(process.argv[3]);
+    if (!(fraction > 0 && fraction <= 1)) {
+      throw new Error("Give the share of users: production 0.2 … 1");
+    }
+    const internal = await call("GET", `${url}/tracks/internal`);
+    const release = internal.releases?.find((r) => r.status === "completed");
+    if (!release) throw new Error("No completed release on the internal track");
+    const { name, versionCodes, releaseNotes } = release;
+    await call("PUT", `${url}/tracks/production`, {
+      track: "production",
+      releases: [
+        fraction < 1
+          ? { name, versionCodes, releaseNotes, status: "inProgress", userFraction: fraction }
+          : { name, versionCodes, releaseNotes, status: "completed" },
+      ],
+    });
+    console.log(`Production: ${name} for ${Math.round(fraction * 100)} % of users`);
+  });
+
+const commands = { check, bundle, listing, production };
 const cmd = commands[process.argv[2]];
 if (!cmd) {
   console.error(`Usage: node scripts/play-publish.mjs ${Object.keys(commands).join("|")}`);
