@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   FlatList,
   Image,
@@ -10,6 +16,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { AppStateContext } from "../../providers/app-state";
 import { PageContext } from "../../providers/page";
 import { SettingsContext } from "../../providers/settings";
 import { getPageImgSrc, getPageTitle } from "../../utils";
@@ -41,6 +48,16 @@ export const FavoritesFeed: React.FC<{
     setStamp(Date.now());
     setTimeout(() => setRefreshing(false), 600);
   }, []);
+
+  // Reload every card when the app comes back to the foreground.
+  const { appState } = useContext(AppStateContext);
+  const lastAppState = useRef(appState);
+  useEffect(() => {
+    if (appState === "active" && lastAppState.current !== "active") {
+      setStamp(Date.now());
+    }
+    lastAppState.current = appState;
+  }, [appState]);
 
   const addButton = onAdd ? (
     <Pressable
