@@ -90,7 +90,7 @@ Versio 3.0 on uudistettu kokonaan:
 **App name** [30]:
 
 ```
-Teksti-TV mobile
+Teksti-TV
 ```
 
 **Short description** [80]:
