@@ -28,6 +28,8 @@ export interface Settings {
   theme: ThemeName;
   ambientGlow: boolean;
   screenRatio: ScreenRatio;
+  /** Favourites feed cards follow screenRatio (and landscape 4:3). */
+  feedUsesPageSize: boolean;
   swipe: SwipeMode;
   pageLinks: boolean;
   highlightScreenLinks: boolean;
@@ -46,11 +48,12 @@ export const MAX_FAVORITES = 20;
 export const defaultSettings: Settings = {
   favorites: [],
   favoriteIcon: "none",
-  dockContent: "both",
+  dockContent: "favorites",
   startView: "front",
   theme: "glass",
-  ambientGlow: false,
-  screenRatio: "tall",
+  ambientGlow: true,
+  screenRatio: "square",
+  feedUsesPageSize: false,
   swipe: "pagesHorizontal",
   pageLinks: true,
   highlightScreenLinks: false,
@@ -59,7 +62,7 @@ export const defaultSettings: Settings = {
   orientationLock: "auto",
   offlineAutoDownload: false,
   onboardingDone: false,
-  version: 5,
+  version: 7,
 };
 
 /**
@@ -67,7 +70,11 @@ export const defaultSettings: Settings = {
  * default and "favoritesReplaceLinks" became dockContent. Version 3:
  * page-number links are on again (version 2 had briefly turned them off).
  * Version 4: favourite chips have no icon by default.
- * Version 5: the background glow is off by default.
+ * Version 6: the background glow is on by default again (version 5 had
+ * briefly turned it off).
+ * Version 7: the dock shows only favourites by default once the first one is
+ * added. Without favourites the setting has no effect, so it is safe to
+ * change for those who have none yet.
  */
 export const migrate = (stored: Record<string, unknown>): Settings => {
   const s = { ...defaultSettings, ...stored } as Settings & {
@@ -86,9 +93,12 @@ export const migrate = (stored: Record<string, unknown>): Settings => {
   if (version < 4 && s.favoriteIcon === "heart") {
     s.favoriteIcon = "none";
   }
-  // Version 5: the background glow is off by default.
-  if (version < 5) {
-    s.ambientGlow = false;
+  // Version 6: the background glow is on by default again.
+  if (version < 6) {
+    s.ambientGlow = true;
+  }
+  if (version < 7 && !s.favorites.length && s.dockContent === "both") {
+    s.dockContent = "favorites";
   }
   s.version = defaultSettings.version;
   delete s.favoritesReplaceLinks;
@@ -119,6 +129,9 @@ const LEGACY_KEYS = [
 
 const legacyRatio = (ratio: string | null): ScreenRatio => {
   switch (ratio) {
+    case null:
+      // Never chosen (or a fresh install): use today's default.
+      return defaultSettings.screenRatio;
     case "full":
     case "16:9":
       return "full";

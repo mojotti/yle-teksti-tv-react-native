@@ -262,3 +262,32 @@ export const FeedHeader: React.FC<{
     </View>
   );
 };
+
+/** Landscape side rail for the favourites feed, like the page view's rail. */
+export const FeedRail: React.FC<{
+  onHome: () => void;
+  onKeypad: () => void;
+  onMenu: () => void;
+}> = ({ onHome, onKeypad, onMenu }) => {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.rail,
+        {
+          backgroundColor: theme.glass ? "transparent" : theme.chrome,
+          borderRightColor: theme.chromeBorder,
+        },
+      ]}
+    >
+      <IconButton name="home-outline" label="Etusivu" onPress={onHome} />
+      <IconButton
+        name="keypad-outline"
+        label="Avaa numeronäppäimistö"
+        onPress={onKeypad}
+      />
+      <View style={styles.grow} />
+      <IconButton name="ellipsis-horizontal" label="Lisää" onPress={onMenu} />
+    </View>
+  );
+};

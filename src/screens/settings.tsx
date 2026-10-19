@@ -120,9 +120,17 @@ export const SettingsScreen: React.FC = () => {
             </Row>
           )}
           <SizePicker
+            label="Sivun koko"
+            options={SIZES}
             value={settings.screenRatio}
             onChange={set("screenRatio")}
           />
+          <Row label="Käytä samaa kokoa suosikkinäkymässä">
+            <Toggle
+              value={settings.feedUsesPageSize}
+              onChange={set("feedUsesPageSize")}
+            />
+          </Row>
         </Group>
         <Footnote text="Koko vaikuttaa pystyasentoon. Vaaka-asennossa sivu näytetään aina television 4:3-kuvasuhteessa." />
 
@@ -575,15 +583,20 @@ const ThemePicker: React.FC<{
                     style={[
                       styles.previewKey,
                       t.glass
-                        ? {
-                            backgroundColor: "rgba(255,255,255,0.14)",
-                            borderBottomWidth: 2,
-                            borderBottomColor: color,
-                            borderRadius: 4,
-                          }
+                        ? styles.previewGlassKey
                         : { backgroundColor: color },
                     ]}
-                  />
+                  >
+                    {/* Same as the real Lasi keys: a glowing bar inside the key. */}
+                    {t.glass && (
+                      <View
+                        style={[
+                          styles.previewGlow,
+                          { backgroundColor: color, shadowColor: color },
+                        ]}
+                      />
+                    )}
+                  </View>
                 ))}
               </View>
             </View>
@@ -600,27 +613,35 @@ const ThemePicker: React.FC<{
   );
 };
 
-const SIZES: { value: ScreenRatio; label: string }[] = [
-  { value: "tv", label: "TV 4:3" },
-  { value: "square", label: "Neliö" },
-  { value: "tall", label: "Korkea" },
-  { value: "full", label: "Koko näyttö" },
+/** `share`: how much of the phone-shaped preview frame the page fills. */
+type SizeOption<T> = { value: T; label: string; share: number };
+
+const SIZES: SizeOption<ScreenRatio>[] = [
+  { value: "tv", label: "TV 4:3", share: ratioHeights.tv / 1.9 },
+  { value: "square", label: "Neliö", share: ratioHeights.square / 1.9 },
+  { value: "tall", label: "Korkea", share: ratioHeights.tall / 1.9 },
+  { value: "full", label: "Koko näyttö", share: 1 },
 ];
 
-const SizePicker: React.FC<{
-  value: ScreenRatio;
-  onChange: (v: ScreenRatio) => void;
-}> = ({ value, onChange }) => {
+function SizePicker<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: SizeOption<T>[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
   const theme = useTheme();
   return (
     <View>
-      <Text style={[styles.pickerLabel, { color: theme.text }]}>
-        Sivun koko
-      </Text>
+      <Text style={[styles.pickerLabel, { color: theme.text }]}>{label}</Text>
       <View style={styles.sizes}>
-        {SIZES.map((s) => {
+        {options.map((s) => {
           const on = s.value === value;
-          const share = s.value === "full" ? 1 : ratioHeights[s.value] / 1.9;
+          const share = s.share;
           return (
             <Pressable
               key={s.value}
@@ -656,7 +677,7 @@ const SizePicker: React.FC<{
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   root: {
@@ -723,6 +744,23 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 9,
     borderRadius: 2,
+  },
+  previewGlassKey: {
+    height: 12,
+    borderRadius: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.22)",
+  },
+  previewGlow: {
+    width: "45%",
+    height: 2,
+    borderRadius: 1,
+    shadowOpacity: 0.9,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 0 },
   },
   tileLabel: {
     flexDirection: "row",

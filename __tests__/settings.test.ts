@@ -10,7 +10,8 @@ describe("loadSettings", () => {
     expect(s.theme).toBe("glass");
     expect(s.showSubpageRow).toBe(false);
     expect(s.pageLinks).toBe(true);
-    expect(s.dockContent).toBe("both");
+    expect(s.dockContent).toBe("favorites");
+    expect(s.screenRatio).toBe("square");
   });
 
   it("moves settings saved before version 2 to the new defaults", async () => {
@@ -27,7 +28,7 @@ describe("loadSettings", () => {
     expect(s.pageLinks).toBe(true);
     expect(s.showSubpageRow).toBe(false);
     expect(s.dockContent).toBe("favorites");
-    expect(s.version).toBe(5);
+    expect(s.version).toBe(7);
     expect("favoritesReplaceLinks" in s).toBe(false);
   });
 
@@ -54,11 +55,11 @@ describe("loadSettings", () => {
     expect((await loadSettings()).favoriteIcon).toBe("star");
   });
 
-  it("keeps choices made after version 5", async () => {
+  it("keeps choices made after version 6", async () => {
     await AsyncStorage.setItem(
       "@settings",
       JSON.stringify({
-        version: 5,
+        version: 6,
         pageLinks: false,
         showSubpageRow: true,
         ambientGlow: true,
@@ -111,23 +112,39 @@ describe("loadSettings", () => {
     );
     const s = await loadSettings();
     expect(s.theme).toBe("teletext");
-    expect(s.dockContent).toBe("both");
+    expect(s.dockContent).toBe("favorites");
     expect(s.offlineAutoDownload).toBe(false);
   });
 
-  it("turns the background glow off for earlier settings", async () => {
+  it("turns the background glow back on for earlier settings", async () => {
     await AsyncStorage.setItem(
       "@settings",
-      JSON.stringify({ version: 4, ambientGlow: true }),
+      JSON.stringify({ version: 5, ambientGlow: false }),
+    );
+    expect((await loadSettings()).ambientGlow).toBe(true);
+  });
+
+  it("keeps the glow off for someone who turned it off later", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 6, ambientGlow: false }),
     );
     expect((await loadSettings()).ambientGlow).toBe(false);
   });
 
-  it("keeps the glow for someone who turned it on later", async () => {
+  it("shows only favourites in the dock for users without any yet", async () => {
     await AsyncStorage.setItem(
       "@settings",
-      JSON.stringify({ version: 5, ambientGlow: true }),
+      JSON.stringify({ version: 6, dockContent: "both", favorites: [] }),
     );
-    expect((await loadSettings()).ambientGlow).toBe(true);
+    expect((await loadSettings()).dockContent).toBe("favorites");
+  });
+
+  it("keeps the dock choice of users who already have favourites", async () => {
+    await AsyncStorage.setItem(
+      "@settings",
+      JSON.stringify({ version: 6, dockContent: "both", favorites: ["100"] }),
+    );
+    expect((await loadSettings()).dockContent).toBe("both");
   });
 });

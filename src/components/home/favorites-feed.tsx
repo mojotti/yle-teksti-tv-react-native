@@ -18,7 +18,9 @@ import {
 } from "react-native";
 import { AppStateContext } from "../../providers/app-state";
 import { PageContext } from "../../providers/page";
-import { SettingsContext } from "../../providers/settings";
+import { ScreenRatio, SettingsContext } from "../../providers/settings";
+import { WindowContext, OrientationTypes } from "../../providers/window";
+import { ratioHeights } from "../../utils";
 import { getPageImgSrc, getPageTitle } from "../../utils";
 import { TextTvResponse } from "../../types/response";
 import { tt, useTheme } from "../../theme/theme";
@@ -27,6 +29,58 @@ import { cropFrame, IMAGE, pageInset } from "../../utils/page-geometry";
 
 /** Shape of the visible (cropped) part of a page image. */
 const IMAGE_RATIO = (IMAGE.height - IMAGE.bottom) / (IMAGE.width - IMAGE.left);
+
+/** Room taken by a card's title row and the gap below it. */
+const CARD_CHROME = 58;
+const GAP = 14;
+const MAX_COLUMNS = 3;
+
+/**
+ * Card image height as a share of its width. By default the page's own
+ * shape; with "same size as pages" on, the page view's size setting
+ * (landscape is always TV 4:3, like the page view).
+ */
+const cardRatio = (
+  screenRatio: ScreenRatio | undefined,
+  isLandscape: boolean,
+  size: { width: number; height: number },
+  inset: number,
+) => {
+  if (!screenRatio) {
+    return IMAGE_RATIO;
+  }
+  if (isLandscape) {
+    return 3 / 4;
+  }
+  if (screenRatio === "full") {
+    // One card fills the feed's height.
+    const w = size.width - inset * 2;
+    return w > 0 ? Math.max(IMAGE_RATIO, (size.height - CARD_CHROME) / w) : 1;
+  }
+  return ratioHeights[screenRatio];
+};
+
+/**
+ * How many cards side by side. Portrait shows one column; landscape adds
+ * columns until a whole card fits on screen.
+ */
+const columnsFor = (
+  width: number,
+  height: number,
+  inset: number,
+  ratio: number,
+) => {
+  if (width <= height) {
+    return 1;
+  }
+  for (let cols = 1; cols < MAX_COLUMNS; cols++) {
+    const w = (width - inset * 2 - GAP * (cols - 1)) / cols;
+    if (w * ratio + CARD_CHROME <= height) {
+      return cols;
+    }
+  }
+  return MAX_COLUMNS;
+};
 
 /**
  * Start view with every favourite page stacked, in the user's order.
@@ -39,7 +93,7 @@ export const FavoritesFeed: React.FC<{
 }> = ({ onOpen, onAdd }) => {
   const theme = useTheme();
   const { settings } = useContext(SettingsContext);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [stamp, setStamp] = useState(Date.now());
   const [refreshing, setRefreshing] = useState(false);
 
@@ -78,6 +132,17 @@ export const FavoritesFeed: React.FC<{
     </Pressable>
   ) : null;
 
+  const { orientation } = useContext(WindowContext);
+  const ratio = cardRatio(
+    settings.feedUsesPageSize ? settings.screenRatio : undefined,
+    orientation === OrientationTypes.Landscape,
+    size,
+    theme.pageInset,
+  );
+  const columns = columnsFor(size.width, size.height, theme.pageInset, ratio);
+  const cardWidth =
+    (size.width - theme.pageInset * 2 - GAP * (columns - 1)) / columns;
+
   if (!settings.favorites.length) {
     return (
       <View style={styles.empty}>
@@ -93,10 +158,23 @@ export const FavoritesFeed: React.FC<{
   return (
     <FlatList
       testID="favorites-feed"
+      // numColumns can't change on the fly, so a new list per column count.
+      key={`columns-${columns}`}
+      numColumns={columns}
       data={settings.favorites}
       keyExtractor={(p) => p}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      onLayout={(e) =>
+        setSize({
+          width: e.nativeEvent.layout.width,
+          height: e.nativeEvent.layout.height,
+        })
+      }
       contentContainerStyle={styles.list}
+      columnWrapperStyle={
+        columns > 1
+          ? { gap: GAP, paddingHorizontal: theme.pageInset }
+          : undefined
+      }
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -118,10 +196,12 @@ export const FavoritesFeed: React.FC<{
         </View>
       }
       renderItem={({ item }) =>
-        width ? (
+        size.width ? (
           <Card
             page={item}
-            width={width - theme.pageInset * 2}
+            width={cardWidth}
+            ratio={ratio}
+            inRow={columns > 1}
             stamp={stamp}
             onOpen={onOpen}
           />
@@ -134,9 +214,12 @@ export const FavoritesFeed: React.FC<{
 const Card: React.FC<{
   page: string;
   width: number;
+  ratio: number;
+  /** Side by side with other cards; the row adds the side margins. */
+  inRow: boolean;
   stamp: number;
   onOpen: (page: string, subPage: string) => void;
-}> = ({ page, width, stamp, onOpen }) => {
+}> = ({ page, width, ratio, inRow, stamp, onOpen }) => {
   const theme = useTheme();
   const { loadResponse } = useContext(PageContext);
   const [response, setResponse] = useState<TextTvResponse | null>();
@@ -170,12 +253,17 @@ const Card: React.FC<{
 
   const count = Number(response?.page.subPageCount || 1);
   const inset = pageInset(theme.radius.page);
-  const height = (width - inset * 2) * IMAGE_RATIO + inset * 2;
+  const height = (width - inset * 2) * ratio + inset * 2;
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) =>
     setCurrent(Math.round(e.nativeEvent.contentOffset.x / width) + 1);
 
   return (
-    <View style={[styles.card, { marginHorizontal: theme.pageInset }]}>
+    <View
+      style={[
+        styles.card,
+        inRow ? { width } : { marginHorizontal: theme.pageInset },
+      ]}
+    >
       <Pressable
         onPress={() => onOpen(page, String(current))}
         style={styles.cardHeader}
@@ -276,7 +364,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingBottom: 16,
-    gap: 14,
+    gap: GAP,
   },
   card: {
     gap: 4,

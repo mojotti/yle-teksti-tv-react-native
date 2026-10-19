@@ -46,7 +46,7 @@ import { PageView, SlideFrom } from "../components/home/page-view";
 import { Keypad } from "../components/home/keypad";
 import { ShareSheet } from "../components/home/share-sheet";
 import { FavoritesFeed } from "../components/home/favorites-feed";
-import { FeedHeader } from "../components/home/header";
+import { FeedHeader, FeedRail } from "../components/home/header";
 import { CoachProvider, Onboarding } from "../components/home/onboarding";
 import {
   Ambient,
@@ -442,6 +442,15 @@ const HomeScreen: React.FC = () => {
     </GestureRecognizer>
   );
 
+  const feedControls = {
+    onHome: () => {
+      leaveFeed("100");
+      goTo("100");
+    },
+    onKeypad: () => setKeypadOpen(true),
+    onMenu: () => setMenuOpen(true),
+  };
+
   const showGuide =
     loaded &&
     !settings.onboardingDone &&
@@ -477,16 +486,19 @@ const HomeScreen: React.FC = () => {
         </View>
       ) : (
         <React.Fragment key={settings.theme}>
-          {feed ? (
+          {feed && isLandscape ? (
+            <View style={styles.row}>
+              <FeedRail {...feedControls} />
+              <View style={styles.flex}>
+                <FavoritesFeed
+                  onOpen={openFromFeed}
+                  onAdd={() => setAddingFavorite(true)}
+                />
+              </View>
+            </View>
+          ) : feed ? (
             <>
-              <FeedHeader
-                onHome={() => {
-                  leaveFeed("100");
-                  goTo("100");
-                }}
-                onKeypad={() => setKeypadOpen(true)}
-                onMenu={() => setMenuOpen(true)}
-              />
+              <FeedHeader {...feedControls} />
               <FavoritesFeed
                 onOpen={openFromFeed}
                 onAdd={() => setAddingFavorite(true)}
